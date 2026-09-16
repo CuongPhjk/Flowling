@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowling — Good content. Better you. (EnglishFlow)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-app: #F8F9FA;
+      --bg-surface: #FFFFFF;
+      --bg-surface-hover: #F8FAFC;
+      --bg-input: #F1F3F5;
+      --border-subtle: #F1F3F5;
+      --border-default: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      
+      --color-green-50: #EBF7EE;
+      --color-green-100: #DCFCE7;
+      --color-green-500: #22C55E;
+      --color-green-600: #16A34A;
+      --color-green-700: #15803D;
+      --color-green-800: #166534;
+      --color-green-900: #14532D;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+      
+      --shadow-card: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 1px 4px -1px rgba(15, 23, 42, 0.04);
+      --shadow-card-hover: 0 12px 28px -6px rgba(15, 23, 42, 0.1), 0 6px 14px -3px rgba(15, 23, 42, 0.05);
+      --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; outline: none; }
+
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* Left Sidebar */
+    .sidebar-left {
+      width: 250px;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-default);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      padding-left: 8px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--color-green-50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2);
+    }
+    .brand-name { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+    .brand-slogan { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+
+    .nav-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 28px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: var(--bg-app); color: var(--text-primary); }
+    .nav-item.active { background: var(--color-green-50); color: var(--color-green-700); font-weight: 700; }
+    .nav-badge {
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: #EF4444;
+      color: #FFF;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .topic-list { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-subtle); }
+    .topic-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 8px;
+    }
+    .topic-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s;
+    }
+    .topic-item:hover { background: var(--bg-app); }
+
+    /* Center Main */
+    .main-stream {
+      flex: 1;
+      padding: 28px 36px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border-radius: var(--radius-full);
+      padding: 10px 18px;
+      max-width: 520px;
+      margin-bottom: 20px;
+    }
+    .search-box input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 0.92rem;
+      margin-left: 10px;
+      color: var(--text-primary);
+    }
+
+    .hero-banner {
+      position: relative;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      min-height: 220px;
+      padding: 26px 30px;
+      color: #FFFFFF;
+      box-shadow: var(--shadow-card);
+      background: linear-gradient(to right, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.65) 55%, rgba(15, 23, 42, 0.4) 100%), url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&auto=format&fit=crop&q=80');
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .hero-btn {
+      padding: 10px 22px;
+      background: #FFFFFF;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: var(--radius-full);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-default);
+      margin-bottom: 24px;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      position: relative;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { color: var(--color-green-600); font-weight: 700; }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 16px;
+      right: 16px;
+      height: 3px;
+      background: var(--color-green-600);
+      border-radius: var(--radius-full);
+    }
+
+    .feed-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .feed-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-card);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .feed-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card-hover);
+    }
+    .feed-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #E2E8F0;
+      overflow: hidden;
+    }
+    .feed-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .type-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 700;
+      backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.95);
+      color: #0F172A;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .duration-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 4px 8px;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.72);
+      color: #FFFFFF;
+      backdrop-filter: blur(6px);
+    }
+    .card-body {
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+    .card-teaser {
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .tag-pill {
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+
+    .nudge-card {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+      border: 1px solid #DDD6FE;
+      border-radius: var(--radius-xl);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    /* Right Sidebar */
+    .sidebar-right {
+      width: 320px;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-default);
+      padding: 24px 20px;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+    .side-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 18px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .modal-box {
+      background: #FFFFFF;
+      border-radius: var(--radius-xl);
+      max-width: 520px;
+      width: 100%;
+      box-shadow: var(--shadow-modal);
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar-left">
+    <div class="brand-header">
+      <div class="brand-icon">🌱</div>
+      <div>
+        <div class="brand-name">Flowling</div>
+        <div class="brand-slogan">Good content. Better you.</div>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <a href="#" class="nav-item active"><span>🏠 Trang chủ</span></a>
+      <a href="#" class="nav-item"><span>🔍 Khám phá</span></a>
+      <a href="#" class="nav-item"><span>🔖 Đã lưu</span></a>
+      <a href="#" class="nav-item" onclick="openReviewModal()">
+        <span>🧠 Ôn tập</span>
+        <span class="nav-badge">12</span>
+      </a>
+      <a href="#" class="nav-item"><span>⏱️ Lịch sử</span></a>
+      <a href="#" class="nav-item"><span>👤 Hồ sơ</span></a>
+    </nav>
+
+    <div class="topic-list">
+      <div class="topic-title">
+        <span>CHỦ ĐỀ</span>
+        <a href="#" style="color: var(--color-green-600); text-decoration: none; font-size: 0.76rem;">Xem tất cả</a>
+      </div>
+      <button class="topic-item" onclick="filterByTag('Khoa học')">🔬 Khoa học</button>
+      <button class="topic-item" onclick="filterByTag('Tâm lý')">🧠 Tâm lý</button>
+      <button class="topic-item" onclick="filterByTag('Môi trường')">🌿 Môi trường</button>
+      <button class="topic-item" onclick="filterByTag('Công nghệ')">💻 Công nghệ</button>
+      <button class="topic-item" onclick="filterByTag('Văn hóa')">🎭 Văn hóa</button>
+      <button class="topic-item" onclick="filterByTag('Sức khỏe')">❤️ Sức khỏe</button>
+      <button class="topic-item" onclick="filterByTag('Kinh tế')">📈 Kinh tế</button>
+      <button class="topic-item" onclick="filterByTag('Xã hội')">👥 Xã hội</button>
+      <button class="topic-item" onclick="filterByTag('Giáo dục')">🎓 Giáo dục</button>
+    </div>
+  </aside>
+
+  <!-- MAIN STREAM -->
+  <main class="main-stream">
+    <!-- Top Search & Greeting -->
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" id="searchInput" placeholder="Tìm bài viết, podcast, video..." oninput="handleSearch()">
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+      <div>
+        <h1 style="font-size: 1.65rem; font-weight: 800;">Chào mừng trở lại, Minh! 👋</h1>
+        <p style="color: var(--text-secondary); font-size: 0.92rem;">Mỗi chút mỗi ngày, bạn đang tiến bộ hơn.</p>
+      </div>
+      <div style="font-style: italic; color: var(--text-muted); font-size: 0.85rem; max-width: 320px; text-align: right;">
+        "A better you is a collection of small efforts, repeated daily."
+      </div>
+    </div>
+
+    <!-- Hero Continue Banner -->
+    <div class="hero-banner">
+      <div>
+        <span class="hero-badge">TIẾP TỤC</span>
+        <h2 style="font-size: 1.65rem; font-weight: 800; margin-bottom: 4px;">Why Do We Dream?</h2>
+        <p style="font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 16px;">🎧 Podcast · 5 phút</p>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="flex: 1; max-width: 380px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px; font-weight: 600;">
+            <span>Tiến trình</span>
+            <span>Đã nghe 62%</span>
+          </div>
+          <div style="height: 6px; background: rgba(255,255,255,0.25); border-radius: var(--radius-full); overflow: hidden;">
+            <div style="width: 62%; height: 100%; background: #22C55E;"></div>
+          </div>
+        </div>
+        <button class="hero-btn" onclick="alert('Đang tải trình phát Podcast: Why Do We Dream?')">
+          ▶ Tiếp tục nghe
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.25rem; font-weight: 800; margin-right: 12px;">Dành cho bạn</span>
+        <button class="tab-btn active" onclick="setTab('ALL', this)">Tất cả</button>
+        <button class="tab-btn" onclick="setTab('ARTICLE', this)">Bài đọc</button>
+        <button class="tab-btn" onclick="setTab('PODCAST', this)">Podcast</button>
+        <button class="tab-btn" onclick="setTab('VIDEO', this)">Video</button>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
+        Mới nhất ▾
+      </div>
+    </div>
+
+    <!-- Feed Grid -->
+    <div class="feed-grid" id="feedGrid">
+      <!-- Cards rendered via JS -->
+    </div>
+  </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="sidebar-right">
+    <!-- User Profile Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
+      <button style="width: 38px; height: 38px; border-radius: var(--radius-full); background: var(--bg-input); font-size: 18px;">🔔</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="text-align: right;">
+          <div style="font-size: 0.88rem; font-weight: 700;">Minh Nguyễn</div>
+          <div style="font-size: 0.74rem; color: var(--text-muted);">Người học tích cực</div>
+        </div>
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" style="width: 38px; height: 38px; border-radius: var(--radius-full); object-fit: cover; border: 2px solid #22C55E;">
+      </div>
+    </div>
+
+    <!-- Card 1: Streak -->
+    <div class="side-card">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 20px;">🔥</span>
+        <h4 style="font-size: 1.25rem; font-weight: 800;">7 ngày liên tục</h4>
+      </div>
+      <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 14px;">Bạn đang duy trì rất tốt! Giữ nhịp độ mỗi ngày nhé.</p>
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;">
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">T2</span></div>
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">T3</span></div>
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">T4</span></div>
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">T5</span></div>
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">T6</span></div>
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">T7</span></div>
+        <div><div style="width: 28px; height: 28px; border-radius: 50%; background: #F97316; color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; margin: 0 auto;">✓</div><span style="font-size: 0.7rem; color: #F97316; font-weight: 700;">CN</span></div>
+      </div>
+    </div>
+
+    <!-- Card 2: Botanical Mindset -->
+    <div class="side-card" style="background: var(--color-green-50); border: 1px solid var(--color-green-100);">
+      <div style="display: flex; gap: 10px;">
+        <span style="font-size: 20px;">🌱</span>
+        <div>
+          <p style="font-weight: 700; color: var(--color-green-900); font-size: 0.88rem; line-height: 1.35;">"Learn from the world around you."</p>
+          <span style="font-size: 0.78rem; color: var(--color-green-800); opacity: 0.85;">Khám phá tiếng Anh tự nhiên qua góc nhìn cuộc sống.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Word of the Day -->
+    <div class="side-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">TỪ VỰNG HÔM NAY</span>
+        <button onclick="speakWord('perspective')" style="padding: 4px 8px; border-radius: 20px; background: var(--color-green-50); color: var(--color-green-700); font-size: 0.75rem; font-weight: 700;">🔊 Nghe</button>
+      </div>
+      <div style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">perspective</div>
+      <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px;">/pərˈspektɪv/ · <em>noun</em></div>
+      <div style="font-weight: 700; color: var(--color-green-600); margin-bottom: 8px; font-size: 0.95rem;">góc nhìn, quan điểm</div>
+      <div style="background: var(--bg-app); padding: 8px 10px; border-radius: 6px; font-size: 0.82rem; color: var(--text-secondary); border-left: 3px solid var(--color-green-600);">
+        "Travel gives you a fresh <strong>perspective</strong> on life."
+      </div>
+    </div>
+
+    <!-- Card 4: SRS Review -->
+    <div class="side-card" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%); border: 1px solid #DDD6FE;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <span style="font-size: 24px;">🧠</span>
+        <div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: #4C1D95;">12 từ chờ ôn tập</h4>
+          <span style="font-size: 0.78rem; color: #6D28D9;">Phương pháp lặp lại ngắt quãng (SRS)</span>
+        </div>
+      </div>
+      <p style="font-size: 0.84rem; color: #5B21B6; margin-bottom: 16px;">Ôn tập 3-5 phút để củng cố vào trí nhớ dài hạn.</p>
+      <button onclick="openReviewModal()" style="width: 100%; padding: 11px; border-radius: var(--radius-full); background: #5842BD; color: #fff; font-weight: 700; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(88,66,189,0.25);">
+        Bắt đầu ôn tập →
+      </button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-overlay" id="reviewModal" onclick="closeReviewModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="padding: 18px 22px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 1.1rem; font-weight: 800;">Ôn tập nhanh (SRS 3-5 phút)</h3>
+      <button onclick="closeReviewModal()" style="font-size: 20px; color: var(--text-muted);">✕</button>
+    </div>
+    <div style="padding: 24px;" id="modalBody">
+      <div id="cardInner" onclick="flipModalCard()" style="min-height: 200px; background: var(--bg-app); border-radius: var(--radius-lg); border: 1px solid var(--border-default); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 20px; text-align: center; position: relative;">
+        <button onclick="event.stopPropagation(); speakWord('remarkable')" style="position: absolute; top: 12px; right: 12px; padding: 6px 10px; background: #fff; border-radius: 20px; font-size: 12px;">🔊</button>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary);">remarkable</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">/rɪˈmɑːrkəbl/ · <em>adj</em></div>
+        <div id="cardBack" style="display: none;">
+          <div style="font-size: 1.15rem; font-weight: 700; color: var(--color-green-600); margin-bottom: 8px;">đáng chú ý, phi thường</div>
+          <p style="font-size: 0.85rem; font-style: italic; color: var(--text-secondary);">"She made a remarkable recovery after the operation."</p>
+        </div>
+        <div id="flipHint" style="font-size: 0.8rem; color: var(--text-muted);">(Bấm để xem nghĩa)</div>
+      </div>
+      <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <button onclick="nextReviewCard()" style="padding: 10px; background: #FEE2E2; color: #991B1B; font-weight: 700; border-radius: 8px; font-size: 0.82rem;">Chưa nhớ</button>
+        <button onclick="nextReviewCard()" style="padding: 10px; background: #FFEDD5; color: #9A3412; font-weight: 700; border-radius: 8px; font-size: 0.82rem;">Khó</button>
+        <button onclick="nextReviewCard()" style="padding: 10px; background: #DCFCE7; color: #166534; font-weight: 700; border-radius: 8px; font-size: 0.82rem;">Nhớ được</button>
+        <button onclick="nextReviewCard()" style="padding: 10px; background: #E0F2FE; color: #075985; font-weight: 700; border-radius: 8px; font-size: 0.82rem;">Rất dễ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const mockItems = [
+    {
+      id: 'art-1',
+      type: 'ARTICLE',
+      title: 'Could Humans Really Live on Mars?',
+      teaser: 'Explore the extreme atmospheric barriers, cosmic radiation shields, and subsurface ice reserves required to establish self-sustaining human habitats.',
+      category: 'Khoa học',
+      catBg: '#E8F0FE', catColor: '#1967D2',
+      duration: '5 phút đọc',
+      thumbnail: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=800&auto=format&fit=crop&q=80',
+      likes: 1240,
+      tags: ['Khoa học', 'Không gian']
+    },
+    {
+      id: 'pod-1',
+      type: 'PODCAST',
+      title: 'The Power of Small Habits',
+      teaser: 'How tiny 1% incremental improvements compound over months to completely reshape your neural circuitry and personal trajectory.',
+      category: 'Tâm lý',
+      catBg: '#F3E8FF', catColor: '#6B21A8',
+      duration: '8 phút nghe',
+      thumbnail: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format&fit=crop&q=80',
+      likes: 2430,
+      tags: ['Tâm lý', 'Thói quen']
+    },
+    {
+      id: 'vid-1',
+      type: 'VIDEO',
+      title: 'Why the Ocean Matters More Than the Amazon Rainforest',
+      teaser: 'Marine phytoplankton produce more than 50% of the planet’s oxygen while acting as the primary carbon sponge of our biosphere.',
+      category: 'Môi trường',
+      catBg: '#EBF7EE', catColor: '#166534',
+      duration: '4:31',
+      thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80',
+      likes: 3120,
+      tags: ['Môi trường', 'Thiên nhiên']
+    },
+    {
+      id: 'art-2',
+      type: 'ARTICLE',
+      title: 'The Psychology of Flow State: Deep Work in Practice',
+      teaser: 'Discover the optimal cognitive sweet spot where distraction evaporates, time slows down, and complex creative challenges become exhilarating.',
+      category: 'Tâm lý',
+      catBg: '#F3E8FF', catColor: '#6B21A8',
+      duration: '6 phút đọc',
+      thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
+      likes: 980,
+      tags: ['Tâm lý', 'Hiệu suất']
+    },
+    {
+      id: 'pod-2',
+      type: 'PODCAST',
+      title: 'How Generative AI is Reshaping Creative Industries',
+      teaser: 'From dynamic soundscapes to procedural writing: Are automated linguistic models expanding human capability or redefining authorship?',
+      category: 'Công nghệ',
+      catBg: '#E0F2FE', catColor: '#0369A1',
+      duration: '11 phút nghe',
+      thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop&q=80',
+      likes: 1850,
+      tags: ['Công nghệ', 'AI']
+    },
+    {
+      id: 'vid-2',
+      type: 'VIDEO',
+      title: 'The Architecture of Ancient Kyoto: Harmony with Silence',
+      teaser: 'A meditative visual exploration of Japanese timber craft, Zen stone gardens, and centuries-old architectural mindfulness.',
+      category: 'Văn hóa',
+      catBg: '#FCE7F3', catColor: '#9D174D',
+      duration: '7:15',
+      thumbnail: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80',
+      likes: 4210,
+      tags: ['Văn hóa', 'Nhật Bản']
+    }
+  ];
+
+  let currentTab = 'ALL';
+
+  function renderCards() {
+    const grid = document.getElementById('feedGrid');
+    const query = (document.getElementById('searchInput').value || '').toLowerCase();
+    
+    const filtered = mockItems.filter(item => {
+      if (currentTab !== 'ALL' && item.type !== currentTab) return false;
+      if (query && !item.title.toLowerCase().includes(query) && !item.teaser.toLowerCase().includes(query) && !item.category.toLowerCase().includes(query)) return false;
+      return true;
+    });
+
+    let html = '';
+    filtered.forEach((item, index) => {
+      const typeLabel = item.type === 'ARTICLE' ? '📖 Bài đọc' : item.type === 'PODCAST' ? '🎧 Podcast' : '🎬 Video';
+      html += `
+        <div class="feed-card" onclick="alert('Xem chi tiết: ' + '${item.title}')">
+          <div class="feed-thumb">
+            <img src="${item.thumbnail}" alt="${item.title}">
+            <div class="type-badge">${typeLabel}</div>
+            <div class="duration-badge">${item.duration}</div>
+          </div>
+          <div class="card-body">
+            <div>
+              <h3 class="card-title">${item.title}</h3>
+              <p class="card-teaser">${item.teaser}</p>
+            </div>
+            <div>
+              <div class="card-tags">
+                <span class="tag-pill" style="background:${item.catBg}; color:${item.catColor};">${item.category}</span>
+                <span class="tag-pill" style="background:var(--bg-input); color:var(--text-secondary);">${item.tags[1] || item.tags[0]}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 12px; font-size: 0.82rem; color: var(--text-muted);">
+                <span onclick="event.stopPropagation(); this.style.color='#EF4444';">♡ ${item.likes}</span>
+                <div style="display: flex; gap: 12px;">
+                  <span onclick="event.stopPropagation(); alert('Đã lưu bài viết!')">🔖</span>
+                  <span>···</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Insert in-feed nudge after card 2
+      if (index === 1 && currentTab === 'ALL' && !query) {
+        html += `
+          <div class="nudge-card">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: #FFF; display: flex; align-items: center; justify-content: center; font-size: 22px;">🧠</div>
+              <div>
+                <div style="font-size: 0.8rem; color: #6B21A8; font-weight: 600;">⏱️ Bạn đã lướt được 12 phút</div>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #4C1D95;">5 từ vựng đã sẵn sàng ôn tập</h4>
+              </div>
+            </div>
+            <button onclick="openReviewModal()" style="padding: 9px 18px; border-radius: var(--radius-full); background: #5842BD; color: #FFF; font-weight: 700; font-size: 0.85rem;">
+              Ôn tập 2 phút →
+            </button>
+          </div>
+        `;
+      }
+    });
+
+    grid.innerHTML = html;
+  }
+
+  function setTab(tab, el) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    el.classList.add('active');
+    renderCards();
+  }
+
+  function filterByTag(tagName) {
+    document.getElementById('searchInput').value = tagName;
+    renderCards();
+  }
+
+  function handleSearch() {
+    renderCards();
+  }
+
+  function speakWord(word) {
+    if ('speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(word);
+      utter.lang = 'en-US';
+      window.speechSynthesis.speak(utter);
+    }
+  }
+
+  function openReviewModal() {
+    document.getElementById('reviewModal').style.display = 'flex';
+  }
+
+  function closeReviewModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+  }
+
+  let isFlipped = false;
+  function flipModalCard() {
+    isFlipped = !isFlipped;
+    document.getElementById('cardBack').style.display = isFlipped ? 'block' : 'none';
+    document.getElementById('flipHint').style.display = isFlipped ? 'none' : 'block';
+  }
+
+  function nextReviewCard() {
+    alert('🎉 Tuyệt vời! +15 XP. Đã củng cố trí nhớ vào não bộ.');
+    closeReviewModal();
+  }
+
+  // Initial render
+  renderCards();
+</script>
+
+</body>
+</html>
