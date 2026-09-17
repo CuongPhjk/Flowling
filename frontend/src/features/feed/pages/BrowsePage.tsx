@@ -20,7 +20,7 @@ export function BrowsePage({
 }: {
   mode?: "home" | "explore" | "saved";
 }) {
-  const { state, data, updatePersonal } = useDemo();
+  const { state, data, account, updatePersonal } = useDemo();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [type, setType] = useState("ALL");
@@ -33,14 +33,14 @@ export function BrowsePage({
   const feedRef = useRef<HTMLDivElement>(null);
   const seen = useRef(new Set<string>());
   const topic = params.get("topic") || "";
-  const due = data.words.filter((w) => w.nextReviewAt <= Date.now()).length;
+  const due = account ? data.words.filter((w) => w.nextReviewAt <= Date.now()).length : 0;
   const items = useMemo(
     () =>
       state.contents
         .filter(
           (c) =>
             c.status === "PUBLISHED" &&
-            (mode !== "saved" || data.saved.includes(c.id)) &&
+            (mode !== "saved" || (data?.saved || []).includes(c.id)) &&
             (!topic || c.category === topic) &&
             (type === "ALL" || c.type === type) &&
             (difficulty === "ALL" || c.difficulty === difficulty) &&
@@ -124,7 +124,9 @@ export function BrowsePage({
         }
         title={
           mode === "home"
-            ? `Chào ${data.profile.name.split(" ")[0]}, hôm nay có gì hay?`
+            ? account
+              ? `Chào ${data.profile.name.split(" ")[0]}, hôm nay có gì hay?`
+              : "Hôm nay có gì hay?"
             : mode === "explore"
               ? "Thế giới còn nhiều điều thú vị."
               : "Những điều bạn muốn quay lại."
@@ -134,11 +136,11 @@ export function BrowsePage({
             ? "Đọc một câu chuyện. Nghe một góc nhìn. Khám phá điều mới."
             : mode === "explore"
               ? "Bắt đầu từ điều bạn thích, để sự tò mò dẫn đường."
-              : `${data.saved.filter((id) => state.contents.some((c) => c.id === id && c.status === "PUBLISHED")).length} nội dung được dành riêng cho những lúc rảnh rỗi.`
+              : `${(data?.saved || []).filter((id) => state.contents.some((c) => c.id === id && c.status === "PUBLISHED")).length} nội dung được dành riêng cho những lúc rảnh rỗi.`
         }
       />
       <SearchBox value={query} onChange={setQuery} />
-      {mode === "home" && continuing && progress && !query && (
+      {mode === "home" && account && continuing && progress && !query && (
         <Link className="continue-hero" to={contentPath(continuing)}>
           <Cover src={continuing.thumbnail} alt="" />
           <div>
@@ -276,6 +278,7 @@ export function BrowsePage({
         />
       )}
       {mode === "home" &&
+        account &&
         eligible &&
         due >= 3 &&
         Date.now() > data.snoozeUntil && (

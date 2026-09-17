@@ -293,6 +293,6 @@ export function createSeed(): DemoState {
         data: createPersonal("Biên tập viên", "admin@flowling.demo"),
       },
     ],
-    currentAccountId: "demo-user",
+    currentAccountId: null,
   };
 }

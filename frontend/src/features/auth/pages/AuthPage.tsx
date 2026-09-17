@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Sprout, Eye, EyeOff } from "lucide-react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useDemo, digest } from "../../../app/providers";
 import { Modal } from "../../../shared/components/ui";
 import { AuthLayout } from "../../../layouts/AuthLayout";
+
 export function AuthPage({
   mode = "login",
 }: {
@@ -13,35 +14,48 @@ export function AuthPage({
   const [params] = useSearchParams();
   const admin = params.has("admin");
   const navigate = useNavigate();
-  const [email, setEmail] = useState(
-      admin ? "admin@flowling.demo" : "minh@flowling.demo",
-    ),
-    [password, setPassword] = useState(""),
-    [name, setName] = useState(""),
-    [show, setShow] = useState(false),
-    [remember, setRemember] = useState(true),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
-    [google, setGoogle] = useState(false),
-    [reset, setReset] = useState(false),
-    [newPassword, setNewPassword] = useState("");
+  const location = useLocation();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [show, setShow] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [google, setGoogle] = useState(false);
+  const [reset, setReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setBusy(true);
+
     try {
       if (mode === "forgot") {
-        if (!state.accounts.some((a) => a.email === email.trim().toLowerCase()))
-          throw Error("Email này chưa có trong dữ liệu mẫu.");
+        const found = state.accounts.some((a) => a.email === email.trim().toLowerCase());
+        if (!found) {
+          throw new Error("Không tìm thấy tài khoản với email này.");
+        }
         setReset(true);
         return;
       }
+
+      // Check return location from state (e.g. video, podcast, article or personal tab)
+      const from = (location.state as any)?.from?.pathname
+        ? ((location.state as any).from.pathname + ((location.state as any).from.search || ""))
+        : (admin ? "/admin" : "/");
+
       if (mode === "register") {
         await register(name, email, password);
-        navigate("/");
+        notify("Đăng ký tài khoản thành công!");
+        navigate(from, { replace: true });
       } else {
         const role = await login(email, password, remember);
-        navigate(admin && role === "ADMIN" ? "/admin" : "/");
+        notify("Đăng nhập thành công!");
+        const target = admin && role === "ADMIN" ? "/admin" : from;
+        navigate(target, { replace: true });
       }
     } catch (e) {
       setError((e as Error).message);
@@ -49,13 +63,14 @@ export function AuthPage({
       setBusy(false);
     }
   };
+
   return (
     <AuthLayout>
       <main className="auth-form">
         <Link className="green" to="/">
           ← Về Flowling
         </Link>
-        <span className="demo-pill">Bản trải nghiệm bằng dữ liệu mẫu</span>
+
         <h1>
           {mode === "register"
             ? "Bắt đầu một hành trình mới."
@@ -67,23 +82,30 @@ export function AuthPage({
         </h1>
         <p className="muted">
           {mode === "forgot"
-            ? "Đặt lại mật khẩu của tài khoản trong trình duyệt này."
-            : "Những câu chuyện thú vị đang chờ bạn."}
+            ? "Nhập email của bạn để thiết lập mật khẩu mới."
+            : "Những câu chuyện và nội dung thú vị đang chờ bạn."}
         </p>
+
         {mode !== "forgot" && (
           <>
-            <button className="btn google-btn" onClick={() => setGoogle(true)}>
+            <button
+              type="button"
+              className="btn google-btn"
+              onClick={() => setGoogle(true)}
+            >
               <b aria-hidden="true">G</b> Tiếp tục với Google
             </button>
             <div className="divider">hoặc với email</div>
           </>
         )}
+
         <form onSubmit={submit}>
           {mode === "register" && (
             <label className="field">
               Tên của bạn
               <input
                 required
+                placeholder="Ví dụ: Hoàng Nam"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={100}
@@ -91,23 +113,27 @@ export function AuthPage({
               />
             </label>
           )}
+
           <label className="field">
             Email
             <input
               required
               type="email"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
             />
           </label>
+
           {mode !== "forgot" && (
             <label className="field">
               Mật khẩu
               <div className="password-field">
                 <input
                   required
-                  minLength={mode === "register" ? 8 : 1}
+                  placeholder={mode === "register" ? "Tối thiểu 6 ký tự" : "Nhập mật khẩu"}
+                  minLength={mode === "register" ? 6 : 1}
                   type={show ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -125,6 +151,7 @@ export function AuthPage({
               </div>
             </label>
           )}
+
           {mode === "login" && (
             <div className="row spread small">
               <label className="row">
@@ -140,11 +167,13 @@ export function AuthPage({
               </Link>
             </div>
           )}
+
           {error && (
             <p className="error" role="alert">
               {error}
             </p>
           )}
+
           <button type="submit" disabled={busy} className="btn primary full">
             {busy
               ? "Đang xử lý…"
@@ -155,6 +184,7 @@ export function AuthPage({
                   : "Đăng nhập"}
           </button>
         </form>
+
         <p className="small center">
           {mode === "register" ? "Đã có tài khoản? " : "Chưa có tài khoản? "}
           <Link
@@ -164,42 +194,32 @@ export function AuthPage({
             {mode === "register" ? "Đăng nhập" : "Đăng ký miễn phí"}
           </Link>
         </p>
-        <div className="demo-credentials">
-          <strong>Tài khoản trải nghiệm</strong>
-          <p>
-            Người dùng: minh@flowling.demo
-            <br />
-            Biên tập: admin@flowling.demo
-            <br />
-            Mật khẩu: <code>Flowling123!</code>
-          </p>
-          <small>Đăng nhập và khôi phục được mô phỏng trên thiết bị này.</small>
-        </div>
       </main>
+
       {google && (
         <Modal
-          title="Chọn tài khoản Google mẫu"
+          title="Đăng nhập Google"
           onClose={() => setGoogle(false)}
         >
-          <p>Luồng trải nghiệm không kết nối tài khoản Google thật.</p>
+          <p>
+            Tính năng đăng nhập trực tiếp một chạm qua tài khoản Google OAuth 2.0 đang được kết nối trong bản cập nhật tới.
+          </p>
+          <p className="muted small">
+            Hiện tại, bạn có thể đăng ký và đăng nhập nhanh chóng bằng Email & Mật khẩu ở form bên dưới.
+          </p>
           <button
-            className="btn full"
-            onClick={() => {
-              setState((s) => ({ ...s, currentAccountId: "demo-user" }));
-              sessionStorage.setItem("flowling-session", "demo-user");
-              setGoogle(false);
-              navigate("/");
-            }}
+            className="btn primary full"
+            onClick={() => setGoogle(false)}
           >
-            M · Minh Nguyễn · minh@flowling.demo
+            Tôi hiểu rồi
           </button>
         </Modal>
       )}
+
       {reset && (
-        <Modal title="Đặt lại mật khẩu mẫu" onClose={() => setReset(false)}>
+        <Modal title="Đặt lại mật khẩu" onClose={() => setReset(false)}>
           <p>
-            Trong bản trải nghiệm, bạn đặt lại trực tiếp tại đây; không có email
-            được gửi.
+            Nhập mật khẩu mới cho tài khoản <strong>{email}</strong>:
           </p>
           <form
             onSubmit={async (e) => {
@@ -214,7 +234,7 @@ export function AuthPage({
                       : a,
                   ),
                 }));
-                notify("Đã đặt lại mật khẩu mẫu");
+                notify("Đã cập nhật mật khẩu mới thành công!");
                 setReset(false);
                 navigate("/login");
               } catch {
@@ -226,14 +246,14 @@ export function AuthPage({
               Mật khẩu mới
               <input
                 type="password"
-                minLength={8}
+                minLength={6}
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
               />
             </label>
-            <button className="btn primary">Lưu mật khẩu mới</button>
+            <button className="btn primary full">Lưu mật khẩu mới</button>
           </form>
         </Modal>
       )}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   X,
   Search,
@@ -164,9 +164,33 @@ export function Cover({
   );
 }
 export function ContentCard({ content: c }: { content: Content }) {
-  const { data, toggleSave, toggleLike } = useDemo();
+  const { data, account, toggleSave, toggleLike } = useDemo();
+  const navigate = useNavigate();
+  const location = useLocation();
   const Icon =
     c.type === "ARTICLE" ? BookOpen : c.type === "PODCAST" ? Headphones : Play;
+
+  const isLiked = data?.liked?.includes(c.id) || false;
+  const isSaved = data?.saved?.includes(c.id) || false;
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!account) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    toggleLike(c.id);
+  };
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!account) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    toggleSave(c.id);
+  };
+
   return (
     <article className="content-card">
       <Link className="card-image" to={contentPath(c)}>
@@ -192,26 +216,26 @@ export function ContentCard({ content: c }: { content: Content }) {
         <p className="teaser">{c.teaser}</p>
         <div className="card-footer">
           <button
-            className={data.liked.includes(c.id) ? "liked" : ""}
+            className={isLiked ? "liked" : ""}
             aria-label={`Thích ${c.title}`}
-            aria-pressed={data.liked.includes(c.id)}
-            onClick={() => toggleLike(c.id)}
+            aria-pressed={isLiked}
+            onClick={handleLike}
           >
             <Heart
               size={16}
-              fill={data.liked.includes(c.id) ? "currentColor" : "none"}
+              fill={isLiked ? "currentColor" : "none"}
             />
-            {(c.likes + (data.liked.includes(c.id) ? 1 : 0)).toLocaleString()}
+            {(c.likes + (isLiked ? 1 : 0)).toLocaleString()}
           </button>
           <button
             aria-label={`Lưu ${c.title}`}
-            aria-pressed={data.saved.includes(c.id)}
-            className={data.saved.includes(c.id) ? "green" : ""}
-            onClick={() => toggleSave(c.id)}
+            aria-pressed={isSaved}
+            className={isSaved ? "green" : ""}
+            onClick={handleSave}
           >
             <Bookmark
               size={18}
-              fill={data.saved.includes(c.id) ? "currentColor" : "none"}
+              fill={isSaved ? "currentColor" : "none"}
             />
           </button>
         </div>

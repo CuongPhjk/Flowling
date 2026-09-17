@@ -25,10 +25,17 @@ import { TranscriptEditorPage } from "../features/admin/pages/TranscriptEditorPa
 import { Empty } from "../shared/components/ui";
 function Guard({ admin = false }: { admin?: boolean }) {
   const { account } = useDemo();
+  const location = useLocation();
   if (!account)
-    return <Navigate to={admin ? "/login?admin=1" : "/login"} replace />;
+    return (
+      <Navigate
+        to={admin ? "/login?admin=1" : "/login"}
+        state={{ from: location }}
+        replace
+      />
+    );
   if (admin && account.role !== "ADMIN")
-    return <Navigate to="/login?admin=1" replace />;
+    return <Navigate to="/login?admin=1" state={{ from: location }} replace />;
   return <Outlet />;
 }
 function Detail({ kind }: { kind: "article" | "media" }) {
@@ -85,13 +92,18 @@ export function AppRouter() {
             path="/forgot-password"
             element={<AuthPage key="forgot" mode="forgot" />}
           />
-          <Route element={<Guard />}>
-            <Route element={<MainLayout />}>
-              <Route index element={<BrowsePage key="home" />} />
-              <Route
-                path="explore"
-                element={<BrowsePage key="explore" mode="explore" />}
-              />
+
+          {/* Main Layout containing Public and Protected sub-routes */}
+          <Route element={<MainLayout />}>
+            {/* Public feeds */}
+            <Route index element={<BrowsePage key="home" />} />
+            <Route
+              path="explore"
+              element={<BrowsePage key="explore" mode="explore" />}
+            />
+
+            {/* Protected features: watching/listening/reading & personal workspace */}
+            <Route element={<Guard />}>
               <Route
                 path="saved"
                 element={<BrowsePage key="saved" mode="saved" />}
@@ -103,17 +115,19 @@ export function AppRouter() {
               <Route path="article/:slug" element={<Detail kind="article" />} />
               <Route path="podcast/:slug" element={<Detail kind="media" />} />
               <Route path="video/:slug" element={<Detail kind="media" />} />
-              <Route
-                path="*"
-                element={
-                  <Empty
-                    title="Trang này chưa có trên bản đồ"
-                    description="Quay lại để tìm một câu chuyện mới."
-                  />
-                }
-              />
             </Route>
+
+            <Route
+              path="*"
+              element={
+                <Empty
+                  title="Trang này chưa có trên bản đồ"
+                  description="Quay lại để tìm một câu chuyện mới."
+                />
+              }
+            />
           </Route>
+
           <Route element={<Guard admin />}>
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />

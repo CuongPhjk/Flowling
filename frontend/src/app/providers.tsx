@@ -7,6 +7,7 @@ import {
 } from "react";
 import { createPersonal, createSeed, dayKey } from "../shared/mock/seed";
 import { schedule } from "../features/flashcard/services/srs";
+import { authApi } from "../shared/api/authApi";
 import type {
   Content,
   DemoState,
@@ -15,6 +16,29 @@ import type {
   Vocabulary,
   VocabularyContext,
 } from "../shared/types/demo";
+
+export const GUEST_PERSONAL: PersonalData = {
+  profile: {
+    name: "Khách",
+    email: "",
+    avatar: "",
+    streak: 0,
+    xp: 0,
+    activity: {},
+    speed: 1,
+    theme: "light",
+    reading: "English",
+  },
+  saved: [],
+  liked: [],
+  words: [],
+  contexts: [],
+  progress: [],
+  sentences: [],
+  snoozeUntil: 0,
+  reviewsToday: {},
+};
+
 const STORAGE_KEY = "flowling-demo-v1";
 export const uid = () => crypto.randomUUID();
 export async function digest(value: string) {
@@ -36,7 +60,13 @@ function load(): DemoState {
       Array.isArray(value.vocabulary)
     ) {
       const session = sessionStorage.getItem("flowling-session");
-      return { ...value, currentAccountId: session || value.currentAccountId };
+      const remembered = localStorage.getItem("flowling-remember") === "yes";
+      const token = localStorage.getItem("flowling_jwt_token");
+      const activeId = session || (remembered && token ? value.currentAccountId : null);
+      return { 
+        ...value, 
+        currentAccountId: activeId && activeId !== "demo-user" ? activeId : null 
+      };
     }
   } catch {}
   return createSeed();
@@ -73,7 +103,7 @@ function useDemoState() {
   const [notice, setNotice] = useState("");
   const [storageError, setStorageError] = useState("");
   const account = state.accounts.find((a) => a.id === state.currentAccountId);
-  const data = account?.data;
+  const data = account?.data || GUEST_PERSONAL;
   useEffect(() => {
     try {
       const persist = localStorage.getItem("flowling-remember") !== "no";
@@ -236,48 +266,118 @@ function useDemoState() {
       );
     });
   const login = async (email: string, password: string, remember: boolean) => {
-    const found = state.accounts.find(
-      (a) => a.email === email.trim().toLowerCase(),
-    );
-    if (
-      !found ||
-      (found.passwordHash === "demo"
-        ? password !== "Flowling123!"
-        : found.passwordHash !== (await digest(password)))
-    )
-      throw Error("Email hoặc mật khẩu chưa đúng.");
+    const normalizedEmail = email.trim().toLowerCase();
+    let userRole: "USER" | "ADMIN" = "USER";
+    let accountId = "";
+    let userName = "";
+
+    try {
+      const authRes = await authApi.login({ email: normalizedEmail, password });
+      userRole = authRes.role === "ADMIN" ? "ADMIN" : "USER";
+      accountId = String(authRes.id);
+      userName = authRes.fullName || authRes.email.split("@")[0];
+    } catch (apiErr: any) {
+      const found = state.accounts.find((a) => a.email === normalizedEmail);
+      if (
+        !found ||
+        (found.passwordHash === "demo"
+          ? password !== "Flowling123!"
+          : found.passwordHash !== (await digest(password)))
+      ) {
+        const message =
+          apiErr?.response?.data?.message || "Email hoặc mật khẩu chưa đúng.";
+        throw new Error(message);
+      }
+      userRole = found.role;
+      accountId = found.id;
+      userName = found.data.profile.name;
+    }
+
     localStorage.setItem("flowling-remember", remember ? "yes" : "no");
-    sessionStorage.setItem("flowling-session", found.id);
-    setState((s) => ({ ...s, currentAccountId: found.id }));
-    return found.role;
+    sessionStorage.setItem("flowling-session", accountId);
+
+    setState((s) => {
+      const existing = s.accounts.find(
+        (a) => a.id === accountId || a.email === normalizedEmail
+      );
+      if (existing) {
+        return {
+          ...s,
+          currentAccountId: existing.id,
+          accounts: s.accounts.map((a) =>
+            a.id === existing.id ? { ...a, role: userRole } : a
+          ),
+        };
+      } else {
+        const newAcc = {
+          id: accountId,
+          email: normalizedEmail,
+          passwordHash: "",
+          role: userRole,
+          data: createPersonal(userName || normalizedEmail, normalizedEmail, false),
+        };
+        return {
+          ...s,
+          currentAccountId: accountId,
+          accounts: [...s.accounts, newAcc],
+        };
+      }
+    });
+
+    return userRole;
   };
+
   const register = async (name: string, email: string, password: string) => {
-    if (!name.trim()) throw Error("Nhập tên hiển thị của bạn.");
-    if (password.length < 8) throw Error("Mật khẩu cần ít nhất 8 ký tự.");
-    email = email.trim().toLowerCase();
-    if (state.accounts.some((a) => a.email === email))
-      throw Error("Email này đã có tài khoản.");
-    const id = uid(),
-      passwordHash = await digest(password);
+    if (!name.trim()) throw new Error("Nhập tên hiển thị của bạn.");
+    if (password.length < 6) throw new Error("Mật khẩu cần ít nhất 6 ký tự.");
+    const normalizedEmail = email.trim().toLowerCase();
+
+    let accountId: string = uid();
+    let userRole: "USER" | "ADMIN" = "USER";
+
+    try {
+      const authRes = await authApi.register({
+        fullName: name.trim(),
+        email: normalizedEmail,
+        password,
+      });
+      accountId = String(authRes.id);
+      userRole = authRes.role === "ADMIN" ? "ADMIN" : "USER";
+    } catch (apiErr: any) {
+      if (apiErr?.response?.data?.message) {
+        throw new Error(apiErr.response.data.message);
+      }
+      if (state.accounts.some((a) => a.email === normalizedEmail)) {
+        throw new Error("Email này đã có tài khoản.");
+      }
+    }
+
+    const passwordHash = await digest(password);
+    sessionStorage.setItem("flowling-session", accountId);
+    localStorage.setItem("flowling-remember", "yes");
+
     setState((s) => ({
       ...s,
-      currentAccountId: id,
+      currentAccountId: accountId,
       accounts: [
-        ...s.accounts,
+        ...s.accounts.filter((a) => a.email !== normalizedEmail),
         {
-          id,
-          email,
+          id: accountId,
+          email: normalizedEmail,
           passwordHash,
-          role: "USER",
-          data: createPersonal(name.trim(), email, false),
+          role: userRole,
+          data: createPersonal(name.trim(), normalizedEmail, false),
         },
       ],
     }));
-    sessionStorage.setItem("flowling-session", id);
   };
+
   const logout = () => {
+    authApi.logout();
     sessionStorage.removeItem("flowling-session");
+    localStorage.removeItem("flowling-remember");
     setState((s) => ({ ...s, currentAccountId: null }));
+    setNotice("Đã đăng xuất");
   };
   const saveContent = (content: Content) =>
     setState((s) =>
