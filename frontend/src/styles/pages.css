@@ -1719,11 +1719,51 @@ progress::-moz-progress-bar {
   inset: 0;
   opacity: 0.94;
 }
+.google-fallback-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.google-fallback-btn {
+  width: 100%;
+  max-width: 400px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #ffffff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.google-fallback-btn:hover:not(:disabled) {
+  background-color: #f8fafd;
+  border-color: #d2e3fc;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.2);
+}
+.google-fallback-btn:active:not(:disabled) {
+  background-color: #f1f3f4;
+}
+.google-fallback-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .google-config-note {
   margin: 0;
   color: #b42318;
   font-size: 12px;
   text-align: center;
+  line-height: 1.4;
 }
 .divider {
   display: flex;
