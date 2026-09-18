@@ -4,6 +4,7 @@ import com.englishflow.common.dto.ApiResponse;
 import com.englishflow.security.UserPrincipal;
 import com.englishflow.user.dto.AuthRequest;
 import com.englishflow.user.dto.AuthResponse;
+import com.englishflow.user.dto.GoogleAuthRequest;
 import com.englishflow.user.dto.RegisterRequest;
 import com.englishflow.user.dto.UserProfileResponse;
 import com.englishflow.user.service.AuthService;
@@ -32,6 +33,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.ok("Login successful", response));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@Valid @RequestBody GoogleAuthRequest request) {
+        AuthResponse response = authService.googleLogin(request);
+        return ResponseEntity.ok(ApiResponse.ok("Google login successful", response));
     }
 
     @GetMapping("/me")

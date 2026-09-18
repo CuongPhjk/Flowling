@@ -36,6 +36,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres123}
       JWT_SECRET: ${JWT_SECRET:-9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       SERVER_PORT: 8080
     ports:
       - "${BACKEND_PORT:-8080}:8080"
@@ -46,12 +47,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     container_name: englishflow-frontend
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      VITE_API_BASE_URL: http://backend:8080/api
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     networks:

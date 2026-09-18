@@ -1687,12 +1687,43 @@ progress::-moz-progress-bar {
   font-size: 13px;
   margin-bottom: 25px;
 }
-.google-btn {
+.google-signin {
+  position: relative;
   width: 100%;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
 }
-.google-btn b {
-  font-size: 18px;
-  color: #4285f4;
+.google-signin.disabled {
+  pointer-events: none;
+}
+.google-signin > div {
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+.google-signin-placeholder,
+.google-busy-mask {
+  width: 100%;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  border: var(--flow-border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.google-busy-mask {
+  position: absolute;
+  inset: 0;
+  opacity: 0.94;
+}
+.google-config-note {
+  margin: 0;
+  color: #b42318;
+  font-size: 12px;
+  text-align: center;
 }
 .divider {
   display: flex;

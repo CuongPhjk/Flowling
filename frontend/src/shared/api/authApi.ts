@@ -11,6 +11,10 @@ export interface RegisterPayload {
   fullName: string;
 }
 
+export interface GoogleLoginPayload {
+  credential: string;
+}
+
 export interface AuthUser {
   id: number;
   email: string;
@@ -56,6 +60,17 @@ export const authApi = {
     const res = await apiClient.post<{ success: boolean; data: AuthResponse }>(
       "/v1/auth/register",
       payload
+    );
+    if (res.data.data.token) {
+      localStorage.setItem("flowling_jwt_token", res.data.data.token);
+    }
+    return res.data.data;
+  },
+
+  googleLogin: async (payload: GoogleLoginPayload) => {
+    const res = await apiClient.post<{ success: boolean; data: AuthResponse }>(
+      "/v1/auth/google",
+      payload,
     );
     if (res.data.data.token) {
       localStorage.setItem("flowling_jwt_token", res.data.data.token);

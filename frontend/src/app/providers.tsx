@@ -372,8 +372,98 @@ function useDemoState() {
     }));
   };
 
+  const googleLogin = async (credential: string, remember: boolean) => {
+    let authRes;
+    try {
+      authRes = await authApi.googleLogin({ credential });
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        (error?.code === "ERR_NETWORK"
+          ? "Không kết nối được máy chủ xác thực. Hãy khởi động backend rồi thử lại."
+          : "Không thể đăng nhập bằng Google. Vui lòng thử lại.");
+      throw new Error(message);
+    }
+
+    const accountId = String(authRes.id);
+    const normalizedEmail = authRes.email.toLowerCase();
+    const role: "USER" | "ADMIN" =
+      authRes.role === "ROLE_ADMIN" || authRes.role === "ADMIN"
+        ? "ADMIN"
+        : "USER";
+
+    localStorage.setItem("flowling-remember", remember ? "yes" : "no");
+    sessionStorage.setItem("flowling-session", accountId);
+    setState((current) => {
+      const existing = current.accounts.find(
+        (candidate) =>
+          candidate.id === accountId || candidate.email === normalizedEmail,
+      );
+      if (existing) {
+        return {
+          ...current,
+          currentAccountId: existing.id,
+          accounts: current.accounts.map((candidate) =>
+            candidate.id === existing.id
+              ? {
+                  ...candidate,
+                  role,
+                  data: {
+                    ...candidate.data,
+                    profile: {
+                      ...candidate.data.profile,
+                      name: authRes.fullName || candidate.data.profile.name,
+                      email: normalizedEmail,
+                      avatar:
+                        authRes.avatarUrl || candidate.data.profile.avatar,
+                      streak:
+                        authRes.currentStreak ?? candidate.data.profile.streak,
+                      xp: authRes.totalXp ?? candidate.data.profile.xp,
+                    },
+                  },
+                }
+              : candidate,
+          ),
+        };
+      }
+
+      return {
+        ...current,
+        currentAccountId: accountId,
+        accounts: [
+          ...current.accounts,
+          {
+            id: accountId,
+            email: normalizedEmail,
+            passwordHash: "",
+            role,
+            data: {
+              ...createPersonal(
+                authRes.fullName || normalizedEmail.split("@")[0],
+                normalizedEmail,
+                false,
+              ),
+              profile: {
+                ...createPersonal(
+                  authRes.fullName || normalizedEmail.split("@")[0],
+                  normalizedEmail,
+                  false,
+                ).profile,
+                avatar: authRes.avatarUrl || "",
+                streak: authRes.currentStreak || 0,
+                xp: authRes.totalXp || 0,
+              },
+            },
+          },
+        ],
+      };
+    });
+    return role;
+  };
+
   const logout = () => {
     authApi.logout();
+    window.google?.accounts.id.disableAutoSelect();
     sessionStorage.removeItem("flowling-session");
     localStorage.removeItem("flowling-remember");
     setState((s) => ({ ...s, currentAccountId: null }));
@@ -412,6 +502,7 @@ function useDemoState() {
     grade,
     login,
     register,
+    googleLogin,
     logout,
     saveContent,
     deleteContent,

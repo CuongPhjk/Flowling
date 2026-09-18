@@ -32,6 +32,9 @@ public class User {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Column(name = "google_subject", unique = true, length = 255)
+    private String googleSubject;
+
     @Column(nullable = false, length = 20)
     @Builder.Default
     private String role = "ROLE_USER";

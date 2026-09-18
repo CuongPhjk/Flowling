@@ -4,13 +4,14 @@ import { Eye, EyeOff } from "lucide-react";
 import { useDemo, digest } from "../../../app/providers";
 import { Modal } from "../../../shared/components/ui";
 import { AuthLayout } from "../../../layouts/AuthLayout";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 export function AuthPage({
   mode = "login",
 }: {
   mode?: "login" | "register" | "forgot";
 }) {
-  const { state, setState, login, register, notify } = useDemo();
+  const { state, setState, login, register, googleLogin, notify } = useDemo();
   const [params] = useSearchParams();
   const admin = params.has("admin");
   const navigate = useNavigate();
@@ -23,7 +24,6 @@ export function AuthPage({
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [google, setGoogle] = useState(false);
   const [reset, setReset] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
@@ -64,6 +64,28 @@ export function AuthPage({
     }
   };
 
+  const signInWithGoogle = async (credential: string) => {
+    setError("");
+    setBusy(true);
+    try {
+      const role = await googleLogin(credential, remember);
+      notify("Đăng nhập bằng Google thành công!");
+      const requestedPath = (location.state as any)?.from?.pathname
+        ? (location.state as any).from.pathname +
+          ((location.state as any).from.search || "")
+        : admin
+          ? "/admin"
+          : "/";
+      navigate(admin && role !== "ADMIN" ? "/" : requestedPath, {
+        replace: true,
+      });
+    } catch (googleError) {
+      setError((googleError as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <AuthLayout>
       <main className="auth-form">
@@ -88,13 +110,10 @@ export function AuthPage({
 
         {mode !== "forgot" && (
           <>
-            <button
-              type="button"
-              className="btn google-btn"
-              onClick={() => setGoogle(true)}
-            >
-              <b aria-hidden="true">G</b> Tiếp tục với Google
-            </button>
+            <GoogleSignInButton
+              disabled={busy}
+              onCredential={signInWithGoogle}
+            />
             <div className="divider">hoặc với email</div>
           </>
         )}
@@ -195,26 +214,6 @@ export function AuthPage({
           </Link>
         </p>
       </main>
-
-      {google && (
-        <Modal
-          title="Đăng nhập Google"
-          onClose={() => setGoogle(false)}
-        >
-          <p>
-            Tính năng đăng nhập trực tiếp một chạm qua tài khoản Google OAuth 2.0 đang được kết nối trong bản cập nhật tới.
-          </p>
-          <p className="muted small">
-            Hiện tại, bạn có thể đăng ký và đăng nhập nhanh chóng bằng Email & Mật khẩu ở form bên dưới.
-          </p>
-          <button
-            className="btn primary full"
-            onClick={() => setGoogle(false)}
-          >
-            Tôi hiểu rồi
-          </button>
-        </Modal>
-      )}
 
       {reset && (
         <Modal title="Đặt lại mật khẩu" onClose={() => setReset(false)}>

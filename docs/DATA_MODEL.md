@@ -50,6 +50,7 @@ Lưu trữ hồ sơ người dùng, thông tin xác thực JWT và chỉ số th
 | `password_hash` | VARCHAR(255) | NOT NULL | Mật khẩu băm BCrypt |
 | `full_name` | VARCHAR(100) | NOT NULL | Tên hiển thị (VD: Minh Nguyễn) |
 | `avatar_url` | VARCHAR(500) | NULL | Đường dẫn ảnh đại diện |
+| `google_subject` | VARCHAR(255) | UNIQUE, NULL | Google `sub` bất biến dùng để khóa liên kết tài khoản xã hội |
 | `role` | VARCHAR(20) | NOT NULL DEFAULT 'ROLE_USER' | `ROLE_USER` hoặc `ROLE_ADMIN` |
 | `current_streak` | INT | NOT NULL DEFAULT 0 | Chuỗi ngày liên tục (`🔥 7 ngày`) |
 | `total_xp` | INT | NOT NULL DEFAULT 0 | Tổng điểm kinh nghiệm |

@@ -27,7 +27,8 @@
    - Tiêu đề: `Chào mừng bạn trở lại! 👋` (Font 24px, Bold).
    - Phụ đề: `Đăng nhập để tiếp tục khám phá content hay.`
 2. **Nút Đăng Nhập Mạng Xã Hội (Social Login):**
-   - Nút: `Tiếp tục với Google` (Icon Google chuẩn, nền trắng, viền mảnh `#E5E7EB`, bo góc tròn pill).
+   - Nút `Tiếp tục với Google` do Google Identity Services render theo chuẩn nhận diện chính thức, mở luồng chọn tài khoản dạng popup.
+   - Trong lúc backend xác thực, vùng nút hiển thị trạng thái `Đang xác thực…`; lỗi cấu hình, tải SDK hoặc xác thực xuất hiện ngay trong form.
 3. **Đường Phân Cách:** `hoặc với email` (đường kẻ mỏng màu xám nhạt).
 4. **Các Trường Nhập Liệu (Input Fields):**
    - Ô nhập Email: Nền `#F8F9FA`, viền mỏng `#E5E7EB`, bo góc `12px`, padding êm ái.
@@ -39,7 +40,7 @@
 
 ## Frontend demo implementation — 2026-09-10
 
-/#/login, /#/register, /#/forgot-password is implemented with shared mock data and persistent browser interactions. See [Frontend demo coverage and limitations](../FRONTEND_DEMO.md) for the exact scope, accounts, routes and verification. Production API work remains tracked separately.
+`/#/login`, `/#/register`, `/#/forgot-password` hỗ trợ email/password và Google Identity Services. Google dùng cùng một nút ở màn hình đăng nhập và đăng ký, sau đó quay về trang người dùng đang mở trước khi xác thực.
 
 - Frontend: [`frontend/src/features/auth/`](../../frontend/src/features/auth/).
 - Domain reference: [Data model](../DATA_MODEL.md) and [Business rules](../BUSINESS_RULES.md).

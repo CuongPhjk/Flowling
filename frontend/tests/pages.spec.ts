@@ -98,15 +98,15 @@ test("profile theme persists and authentication recovery has a working demo flow
   await page.getByLabel("Mật khẩu", { exact: true }).fill("Updated123!");
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).toHaveURL(/#\/$/);
+});
+
+test("Google Sign-In gives a clear setup state when no client ID is configured", async ({
+  page,
+}) => {
   await page.goto("/#/login");
-  await page
-    .getByRole("button", { name: "Tiếp tục với Google", exact: true })
-    .click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: /Minh Nguyễn/ })
-    .click();
-  await expect(page).toHaveURL(/#\/$/);
+  await expect(
+    page.getByText("Google Sign-In chưa được cấu hình cho môi trường này."),
+  ).toBeVisible();
 });
 test("all user pages render, browser back works, mobile has no horizontal overflow", async ({
   page,

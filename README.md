@@ -106,6 +106,10 @@ Open `http://localhost:3000`. Demo accounts, routes, implemented interactions an
 # 1. Copy environment variables
 cp .env.example .env
 
+# Configure Google Sign-In in .env with the same Web client ID:
+# GOOGLE_CLIENT_ID=...apps.googleusercontent.com
+# VITE_GOOGLE_CLIENT_ID=...apps.googleusercontent.com
+
 # 2. Start full Docker stack
 docker-compose up --build
 
@@ -114,3 +118,5 @@ docker-compose up --build
 # Backend API:  http://localhost:8080/api
 # PostgreSQL:   localhost:5432
 ```
+
+For direct `npm run dev`, copy `frontend/.env.example` to `frontend/.env` and fill `VITE_GOOGLE_CLIENT_ID`. The Google Cloud OAuth Web client must allow `http://localhost:3000` as an Authorized JavaScript origin.

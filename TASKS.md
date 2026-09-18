@@ -53,6 +53,7 @@ MVP 0 (Admin & Content CMS)
 
 - [x] **User Authentication & Profiles ([`docs/features/AUTH.md`](./docs/features/AUTH.md) | [`docs/design/AUTH.md`](./docs/design/AUTH.md)):**
   - [x] Backend User registration, login with JWT tokens (`POST /api/v1/auth/login`, `POST /api/v1/auth/register`, `GET /api/v1/auth/me`)
+  - [x] Google Identity Services login with server-side ID token verification (`POST /api/v1/auth/google`)
 - [x] **Screen 1: Home Feed Backend & API ([`docs/design/HOME.md`](./docs/design/HOME.md)):**
   - [x] Polymorphic feed API (`GET /api/v1/feed?page=0&size=10`) interleaving Articles, Podcasts, Videos
   - [x] Progress tracking and saved bookmarks integration

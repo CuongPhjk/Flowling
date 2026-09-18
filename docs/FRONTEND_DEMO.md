@@ -17,7 +17,7 @@ Open `http://localhost:3000`. Hash-based routes also work on static hosting with
 | Reader | `minh@flowling.demo` | `Flowling123!` |
 | Editor | `admin@flowling.demo` | `Flowling123!` |
 
-The initial session opens as the demo reader. Use **Không gian biên tập** in the sidebar, or `/#/login?admin=1`, to sign in as the editor. Account registration creates an independent, initially empty personal library. Google account selection and password recovery are explicitly simulated; no email is sent and no external Google session is accessed.
+The initial session opens as the demo reader. Use **Không gian biên tập** in the sidebar, or `/#/login?admin=1`, to sign in as the editor. Account registration creates an independent, initially empty personal library. Password recovery is simulated and no email is sent. Google Sign-In is real when `VITE_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_ID`, and the backend are configured.
 
 ## Screen coverage
 
@@ -33,7 +33,7 @@ The initial session opens as the demo reader. Use **Không gian biên tập** in
 | Review `/#/review` | Due cards; 3D flip and Space; four grades with 1–4 shortcuts; Again requeue; bounded session; persisted schedules; XP and return to feed | [Flashcards](features/FLASHCARD.md), [Review](design/REVIEW.md) |
 | History `/#/history` | Date groups; incomplete/completed filters; resume; saved context counts; clear confirmation | [History](design/HISTORY.md) |
 | Profile `/#/profile` | Name/avatar editing, 30-day heatmap, streak/XP/word/time totals, theme, media speed, reading preference and logout | [Profile](design/PROFILE.md) |
-| Login / register / forgot password | Email/password form validation, visibility toggle, remembered or session-only login, separate account data, demo role guards, simulated Google selection/reset | [Auth](features/AUTH.md), [Screen](design/AUTH.md) |
+| Login / register / forgot password | Email/password form validation, remembered or session-only login, server-verified Google Sign-In, separate account data, demo role guards and simulated password reset | [Auth](features/AUTH.md), [Screen](design/AUTH.md) |
 | Admin `/#/admin` | Live totals, filters/search/pagination, preview, status toggle, edit, transcript entry and delete confirmation | [Admin](features/ADMIN.md), [Dashboard](design/admin/DASHBOARD.md) |
 | Article editor `/#/admin/article/new` or `:id` | Auto slug, English/VI paragraphs, lightweight Markdown, preview, cover upload, topic/difficulty/author/teaser, word count and keywords, draft/publish | [Article editor](design/admin/ARTICLE_EDITOR.md) |
 | Media editor `/#/admin/media/new?type=PODCAST` or `VIDEO` / `:id` | File upload/drop, persistent media assets, direct URL input, native preview, decoded audio waveform, duration extraction, save and continue to transcript | [Media editor](design/admin/MEDIA_EDITOR.md) |
@@ -52,7 +52,7 @@ The initial session opens as the demo reader. Use **Không gian biên tập** in
 
 ## Mock boundaries
 
-This implementation provides browser interactions and local state, not production authentication, API synchronization, database migrations or server RBAC. Password hashing is a demo convenience; client-side role checks are not a security boundary. Replacing the mock store with API-backed services is a subsequent backend integration task.
+Most demo interactions use browser-local state rather than API synchronization. Email/password can fall back to local demo accounts when the API is unavailable. Google Sign-In never uses that fallback: the backend validates the Google ID token and issues the application JWT. Client-side role checks are not a security boundary.
 
 The local dictionary covers sample vocabulary. An unknown word can be saved with a user-entered meaning and the available sentence translation. Translation suggestions match the supplied sample sentences; they do not invoke an AI translation service. The article editor supports headings, bold and emphasis, rather than a full Markdown engine. Media synchronization currently supports native audio/video files and direct media URLs; YouTube iframe / Cloudflare embed SDK integration is outside this local demo.
 
