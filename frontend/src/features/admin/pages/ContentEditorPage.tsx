@@ -199,18 +199,28 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
         <ArrowLeft size={16} /> Thư viện nội dung
       </Link>
       <PageHeading
-        eyebrow={media ? "MEDIA STUDIO" : "STORY EDITOR"}
+        eyebrow={
+          media
+            ? draft.type === "VIDEO"
+              ? "VIDEO STUDIO"
+              : "PODCAST STUDIO"
+            : "STORY EDITOR"
+        }
         title={
           existing
-            ? "Chăm chút câu chuyện của bạn."
-            : media
-              ? "Một góc nhìn, một giọng kể mới."
-              : "Một câu chuyện đáng để chia sẻ."
+            ? `Chăm chút: ${draft.title || "nội dung của bạn"}`
+            : draft.type === "VIDEO"
+              ? "Thêm video mới"
+              : media
+                ? "Thêm podcast mới"
+                : "Một câu chuyện đáng để chia sẻ."
         }
         description={
-          media
-            ? "Thêm media, rồi ghép từng câu với thời gian."
-            : "Viết bằng tiếng Anh, mở thêm cánh cửa bằng bản dịch."
+          draft.type === "VIDEO"
+            ? "Tải lên tệp hoặc dán URL video, sau đó gắn phụ đề và transcript song ngữ."
+            : media
+              ? "Thêm âm thanh podcast, rồi ghép từng câu với thời gian."
+              : "Viết bằng tiếng Anh, mở thêm cánh cửa bằng bản dịch."
         }
         action={
           <button className="btn" onClick={() => setPreview(true)}>
@@ -248,13 +258,19 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
                 Định dạng
                 <select
                   value={draft.type}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const nextType = e.target.value as ContentType;
                     change({
-                      type: e.target.value as ContentType,
+                      type: nextType,
                       mediaUrl: "",
                       duration: 0,
-                    })
-                  }
+                    });
+                    if (id === "new") {
+                      navigate(`/admin/media/new?type=${nextType}`, {
+                        replace: true,
+                      });
+                    }
+                  }}
                 >
                   <option value="PODCAST">Podcast Audio</option>
                   <option value="VIDEO">Video Clip</option>

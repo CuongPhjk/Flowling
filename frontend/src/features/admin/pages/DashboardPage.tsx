@@ -8,6 +8,7 @@ import {
   FileText,
   Headphones,
   Video,
+  Sparkles,
 } from "lucide-react";
 import { useDemo } from "../../../app/providers";
 import {
@@ -23,6 +24,7 @@ import {
 } from "../../../shared/components/ui";
 import { topics } from "../../../shared/mock/seed";
 import { validateSegments } from "../services/transcript";
+
 export function DashboardPage() {
   const { state, saveContent, deleteContent, notify } = useDemo();
   const [query, setQuery] = useState(""),
@@ -47,36 +49,85 @@ export function DashboardPage() {
         title="Những câu chuyện bắt đầu từ đây."
         description="Chọn lọc nội dung hay, mang thế giới đến gần hơn."
         action={
-          <Link className="btn primary" to="/admin/article/new">
-            <Plus size={17} /> Tạo bài viết
-          </Link>
+          <div className="row" style={{ gap: "8px", flexWrap: "wrap" }}>
+            <Link className="btn primary" to="/admin/article/new">
+              <Plus size={16} /> Viết bài đọc
+            </Link>
+            <Link className="btn" to="/admin/media/new?type=PODCAST">
+              <Headphones size={16} /> Thêm podcast
+            </Link>
+            <Link className="btn" to="/admin/media/new?type=VIDEO">
+              <Video size={16} /> Thêm video
+            </Link>
+          </div>
         }
       />
       <div className="stats-grid four">
         {[
-          { type: "ARTICLE", label: "Bài đọc", Icon: FileText },
-          { type: "PODCAST", label: "Podcast", Icon: Headphones },
-          { type: "VIDEO", label: "Video", Icon: Video },
-        ].map(({ type, label, Icon }) => (
-          <div className="panel" key={type}>
-            <Icon className="green" size={23} />
-            <strong>
-              {state.contents.filter((c) => c.type === type).length}
-            </strong>
-            <p>
-              {label} ·{" "}
-              {
-                state.contents.filter(
-                  (c) => c.type === type && c.status === "DRAFT",
-                ).length
-              }{" "}
-              bản nháp
-            </p>
+          {
+            type: "ARTICLE",
+            label: "Bài đọc",
+            Icon: FileText,
+            color: "var(--color-primary)",
+            bg: "var(--color-primary-light)",
+          },
+          {
+            type: "PODCAST",
+            label: "Podcast",
+            Icon: Headphones,
+            color: "#0284c7",
+            bg: "#e0f2fe",
+          },
+          {
+            type: "VIDEO",
+            label: "Video",
+            Icon: Video,
+            color: "#7c3aed",
+            bg: "#f3e8ff",
+          },
+        ].map(({ type, label, Icon, color, bg }) => {
+          const total = state.contents.filter((c) => c.type === type).length;
+          const drafts = state.contents.filter(
+            (c) => c.type === type && c.status === "DRAFT",
+          ).length;
+          const published = total - drafts;
+          return (
+            <div className="panel admin-stat-card" key={type}>
+              <div className="admin-stat-header">
+                <div
+                  className="admin-stat-icon"
+                  style={{ color, background: bg }}
+                >
+                  <Icon size={18} />
+                </div>
+                <span className="admin-stat-label">{label}</span>
+              </div>
+              <strong className="admin-stat-value">{total}</strong>
+              <div className="admin-stat-meta">
+                <span className="pill green-pill">{published} đã đăng</span>
+                {drafts > 0 ? (
+                  <span className="pill neutral-pill">{drafts} bản nháp</span>
+                ) : (
+                  <span className="small muted">Hoàn tất</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div className="panel admin-stat-card">
+          <div className="admin-stat-header">
+            <div
+              className="admin-stat-icon"
+              style={{ color: "#d97706", background: "#fef3c7" }}
+            >
+              <Sparkles size={18} />
+            </div>
+            <span className="admin-stat-label">Từ vựng quan tâm</span>
           </div>
-        ))}
-        <div className="panel">
-          <span className="eyebrow">TỪ ĐƯỢC QUAN TÂM</span>
-          <h3>
+          <strong className="admin-stat-value">
+            {state.vocabulary.length} từ
+          </strong>
+          <p className="small muted admin-stat-keywords">
             {state.vocabulary
               .map((v) => ({
                 word: v.word,
@@ -90,20 +141,11 @@ export function DashboardPage() {
               .sort((a, b) => b.count - a.count)
               .slice(0, 3)
               .map((v) => v.word)
-              .join(" · ")}
-          </h3>
-          <p>Từ sổ từ trong bản mẫu</p>
+              .join(" · ") || "Đang thu thập từ khóa"}
+          </p>
         </div>
       </div>
-      <div className="actions">
-        <Link className="btn" to="/admin/media/new?type=PODCAST">
-          + Upload Podcast
-        </Link>
-        <Link className="btn" to="/admin/media/new?type=VIDEO">
-          + Thêm Video
-        </Link>
-      </div>
-      <section className="panel">
+      <section className="panel admin-table-panel">
         <div className="row spread">
           <h2>Thư viện nội dung</h2>
           <span className="tag">{items.length} nội dung</span>
@@ -138,7 +180,7 @@ export function DashboardPage() {
           </select>
         </div>
         <div className="table-scroll">
-          <table>
+          <table className="admin-table">
             <thead>
               <tr>
                 <th>Nội dung</th>
@@ -153,18 +195,48 @@ export function DashboardPage() {
                 <tr key={c.id}>
                   <td>
                     <div className="table-title">
-                      <Cover src={c.thumbnail} alt="" />
+                      <div className="table-cover-wrap">
+                        <Cover src={c.thumbnail} alt="" />
+                        <span
+                          className={`table-type-badge ${c.type.toLowerCase()}`}
+                          title={typeLabel[c.type]}
+                        >
+                          {c.type === "ARTICLE" ? (
+                            <FileText size={11} />
+                          ) : c.type === "PODCAST" ? (
+                            <Headphones size={11} />
+                          ) : (
+                            <Video size={11} />
+                          )}
+                        </span>
+                      </div>
                       <div>
                         <strong>{c.title}</strong>
-                        <small>{typeLabel[c.type]}</small>
+                        <small>
+                          {typeLabel[c.type]} ·{" "}
+                          {c.type === "ARTICLE"
+                            ? `${Math.round(c.duration / 60)} phút đọc`
+                            : `${Math.floor(c.duration / 60)}:${String(Math.floor(c.duration % 60)).padStart(2, "0")}`}
+                        </small>
                       </div>
                     </div>
                   </td>
-                  <td>{topics.find((t) => t.id === c.category)?.label}</td>
-                  <td>{c.difficulty}</td>
+                  <td>
+                    <span className="tag">
+                      {topics.find((t) => t.id === c.category)?.label || c.category}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`diff-badge diff-${c.difficulty.toLowerCase()}`}
+                    >
+                      {c.difficulty}
+                    </span>
+                  </td>
                   <td>
                     <button
-                      className={`tag ${c.status === "PUBLISHED" ? "green" : ""}`}
+                      className={`status-pill ${c.status === "PUBLISHED" ? "published" : "draft"}`}
+                      title="Nhấp để chuyển đổi xuất bản / bản nháp"
                       onClick={() => {
                         if (c.status === "DRAFT") {
                           const error =
@@ -196,40 +268,45 @@ export function DashboardPage() {
                         });
                       }}
                     >
+                      <span className="status-dot" />
                       {c.status === "PUBLISHED" ? "Đã xuất bản" : "Bản nháp"}
                     </button>
                   </td>
                   <td>
-                    <div className="row">
+                    <div className="row" style={{ gap: "4px" }}>
                       <Link
                         className="icon-btn"
                         aria-label={`Sửa ${c.title}`}
+                        title="Chỉnh sửa"
                         to={`/admin/${c.type === "ARTICLE" ? "article" : "media"}/${c.id}`}
                       >
-                        <Pencil size={16} />
+                        <Pencil size={15} />
                       </Link>
                       {c.type !== "ARTICLE" && (
                         <Link
                           className="icon-btn"
                           aria-label={`Transcript ${c.title}`}
+                          title="Biên tập Transcript"
                           to={`/admin/transcript/${c.id}`}
                         >
-                          <FileText size={16} />
+                          <FileText size={15} />
                         </Link>
                       )}
                       <Link
                         className="icon-btn"
                         aria-label={`Xem trước ${c.title}`}
+                        title="Xem trước"
                         to={contentPath(c)}
                       >
-                        <Eye size={16} />
+                        <Eye size={15} />
                       </Link>
                       <button
-                        className="icon-btn"
+                        className="icon-btn danger-hover"
                         aria-label={`Xóa ${c.title}`}
+                        title="Xóa nội dung"
                         onClick={() => setRemove(c.id)}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>
