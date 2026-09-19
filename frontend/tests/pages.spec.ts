@@ -116,6 +116,7 @@ test("all user pages render, browser back works, mobile has no horizontal overfl
   for (const route of [
     "/",
     "/explore",
+    "/readflow",
     "/saved",
     "/history",
     "/review",
@@ -141,6 +142,7 @@ test("all user pages render, browser back works, mobile has no horizontal overfl
   for (const route of [
     "/",
     "/explore",
+    "/readflow",
     "/vocabulary",
     "/profile",
     "/article/art-mars",
@@ -375,3 +377,58 @@ test("admin guard, article CRUD, draft visibility and transcript validation", as
   await page.getByRole("button", { name: "Xóa nội dung", exact: true }).click();
   await expect(page.locator("tbody")).not.toContainText("A Brand New Story");
 });
+
+test("readflow bilingual assistant, sample selection, word popup lookup and api key modal work", async ({
+  page,
+}) => {
+  await page.goto("/#/readflow");
+  await expect(page.locator("h1")).toContainText("ReadFlow");
+  await expect(page.locator(".readflow-source-pane")).toBeVisible();
+  await expect(page.locator(".readflow-target-pane")).toBeVisible();
+
+  // Test Sample Article Picker
+  await page.getByRole("button", { name: "Bài mẫu", exact: true }).click();
+  await expect(page.locator(".sample-menu-dropdown")).toBeVisible();
+  await page.getByText("How Small Daily Habits Create Remarkable Changes").click();
+  await expect(page.locator(".source-reader-view")).toContainText("Changes that seem small");
+
+  // Test Font Size & Serif
+  await page.getByRole("button", { name: "Đổi cỡ chữ", exact: true }).click();
+  await page.getByRole("button", { name: "Chuyển đổi kiểu chữ Sách / Tiêu chuẩn", exact: true }).click();
+  await expect(page.locator(".readflow-source-pane .font-serif")).toBeVisible();
+
+  // Test Word Lookup Popup
+  await page
+    .locator('.source-reader-view [role="button"]')
+    .filter({ hasText: /^habits$/ })
+    .first()
+    .click();
+  await expect(page.locator(".readflow-vocab-popup")).toBeVisible();
+  await expect(page.locator(".popup-word-title")).toContainText("habits");
+  
+  // Test Save to Vocabulary
+  await page.locator(".btn-save-vocab").click();
+  await expect(page.locator(".btn-save-vocab")).toContainText("Đã có trong sổ từ");
+  await page.locator(".popup-close-icon").click();
+  await expect(page.locator(".readflow-vocab-popup")).not.toBeVisible();
+
+  // Test API Key Modal
+  await page.getByRole("button", { name: "Cài đặt Google Gemini API Key", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Cài đặt Gemini AI Key");
+  await page.getByPlaceholder("AIzaSy...").fill("AIzaSy_Demo_Test_Key_123");
+  await page.getByRole("button", { name: "Lưu cấu hình", exact: true }).click();
+  await expect(page.getByRole("button", { name: /Gemini Key/ })).toBeVisible();
+
+  // Test Mode Switching (Editor vs Reader)
+  await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
+  await expect(page.locator(".source-textarea")).toBeVisible();
+  await page.getByRole("button", { name: "Đọc hiểu", exact: true }).click();
+  await expect(page.locator(".source-reader-view")).toBeVisible();
+
+  // Test screenshot
+  await page.screenshot({
+    path: "test-results/readflow-desktop.png",
+    fullPage: true,
+  });
+});
+

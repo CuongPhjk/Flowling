@@ -22,6 +22,7 @@ import { AuthPage } from "../features/auth/pages/AuthPage";
 import { DashboardPage } from "../features/admin/pages/DashboardPage";
 import { ContentEditorPage } from "../features/admin/pages/ContentEditorPage";
 import { TranscriptEditorPage } from "../features/admin/pages/TranscriptEditorPage";
+import { ReadFlowPage } from "../features/readflow/pages/ReadFlowPage";
 import { Empty } from "../shared/components/ui";
 function Guard({ admin = false }: { admin?: boolean }) {
   const { account } = useDemo();
@@ -101,6 +102,7 @@ export function AppRouter() {
               path="explore"
               element={<BrowsePage key="explore" mode="explore" />}
             />
+            <Route path="readflow" element={<ReadFlowPage />} />
 
             {/* Protected features: watching/listening/reading & personal workspace */}
             <Route element={<Guard />}>

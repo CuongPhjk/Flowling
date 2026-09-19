@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowRight, Headphones, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, Headphones, SlidersHorizontal, Languages, Sparkles } from "lucide-react";
 import { useDemo } from "../../../app/providers";
 import { topics } from "../../../shared/mock/seed";
 import {
@@ -177,6 +177,21 @@ export function BrowsePage({
               </button>
             ))}
           </div>
+          <div className="readflow-explore-banner">
+            <div className="banner-left">
+              <span className="banner-badge">
+                <Sparkles size={13} className="text-green" /> MỚI: READFLOW AI
+              </span>
+              <h3>Trợ lý đọc hiểu & luyện dịch song ngữ</h3>
+              <p>
+                Dán đường link bất kỳ bài báo tiếng Anh (BBC, CNN, Medium...) để AI bóc tách nội dung, đối chiếu song ngữ song song và tra từ vựng theo ngữ cảnh.
+              </p>
+            </div>
+            <Link to="/readflow" className="btn primary banner-cta-btn">
+              <Languages size={16} /> Mở ReadFlow ngay <ArrowRight size={16} />
+            </Link>
+          </div>
+
           <div className="topic-grid">
             {topics.map((t) => (
               <button

@@ -11,6 +11,8 @@ import {
   BookOpen,
   Settings,
   LogOut,
+  Languages,
+  Sparkles,
 } from "lucide-react";
 import { useDemo } from "../app/providers";
 import { topics } from "../shared/mock/seed";
@@ -20,7 +22,7 @@ export function FlowLayout() {
   const { data, account, logout } = useDemo();
   const location = useLocation();
   const due = account ? data.words.filter((w) => w.nextReviewAt <= Date.now()).length : 0;
-  const wide = /^\/(article|podcast|video)/.test(location.pathname);
+  const wide = /^\/(article|podcast|video|readflow)/.test(location.pathname);
 
   return (
     <div className={`app-shell ${wide ? "reading-shell" : ""}`}>
@@ -65,6 +67,9 @@ export function FlowLayout() {
         </div>
 
         <div className="sidebar-bottom">
+          <Link className="subtle-link" to="/readflow">
+            <Sparkles size={16} className="text-green" /> Trợ lý ReadFlow AI
+          </Link>
           <Link className="subtle-link" to="/vocabulary">
             <BookOpen size={17} /> Sổ từ của bạn
           </Link>
