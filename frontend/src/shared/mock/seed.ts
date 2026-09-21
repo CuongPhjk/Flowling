@@ -282,7 +282,7 @@ export function createSeed(): DemoState {
         id: "demo-user",
         email: "minh@flowling.demo",
         passwordHash: "demo",
-        role: "USER",
+        role: "ADMIN",
         data: createPersonal(),
       },
       {
@@ -293,6 +293,6 @@ export function createSeed(): DemoState {
         data: createPersonal("Biên tập viên", "admin@flowling.demo"),
       },
     ],
-    currentAccountId: null,
+    currentAccountId: "demo-user",
   };
 }

@@ -4,7 +4,7 @@ import { useDemo } from "../../../app/providers";
 import { dayKey } from "../../../shared/mock/seed";
 import { PageHeading, Modal } from "../../../shared/components/ui";
 export function ProfilePage() {
-  const { data, updatePersonal, notify, logout } = useDemo();
+  const { data, updatePersonal, notify } = useDemo();
   const [edit, setEdit] = useState(false),
     [name, setName] = useState(data.profile.name),
     [avatar, setAvatar] = useState(data.profile.avatar);
@@ -151,9 +151,6 @@ export function ProfilePage() {
           </select>
         </label>
       </section>
-      <button className="btn danger" onClick={logout}>
-        Đăng xuất
-      </button>
       {edit && (
         <Modal title="Chỉnh sửa hồ sơ" onClose={() => setEdit(false)}>
           <form

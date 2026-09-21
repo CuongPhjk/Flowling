@@ -33,11 +33,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            UserDetails userDetails = null;
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String email = tokenProvider.extractEmail(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                userDetails = userDetailsService.loadUserByUsername(email);
+            } else {
+                userDetails = userDetailsService.loadDefaultUser();
+            }
 
+            if (userDetails != null) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

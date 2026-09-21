@@ -10,7 +10,6 @@ import {
   ArrowUpRight,
   BookOpen,
   Settings,
-  LogOut,
   Languages,
   Sparkles,
 } from "lucide-react";
@@ -19,44 +18,44 @@ import { topics } from "../shared/mock/seed";
 import { Speak } from "../shared/components/ui";
 
 export function FlowLayout() {
-  const { data, account, logout } = useDemo();
+  const { data } = useDemo();
   const location = useLocation();
-  const due = account ? data.words.filter((w) => w.nextReviewAt <= Date.now()).length : 0;
+  const due = data.words.filter((w) => w.nextReviewAt <= Date.now()).length;
   const wide = /^\/(article|podcast|video|readflow)/.test(location.pathname);
 
   return (
     <div className={`app-shell ${wide ? "reading-shell" : ""}`}>
       <aside className="sidebar">
         <Link className="brand" to="/">
-          <span className="brand-mark">
-            <Sprout />
-          </span>
-          Flowling<span className="brand-dot">.</span>
+          <Sprout />
+          Flowling.
         </Link>
-        <p className="brand-tagline">Good content. Better you.</p>
+        <span className="eyebrow">GOOD CONTENT. BETTER YOU.</span>
 
-        <span className="nav-caption">KHÔNG GIAN CỦA BẠN</span>
         <nav>
-          {[
-            { to: "/", label: "Trang chủ", Icon: Home },
-            { to: "/explore", label: "Khám phá", Icon: Compass },
-            { to: "/saved", label: "Đã lưu", Icon: Bookmark },
-            { to: "/review", label: "Ôn tập", Icon: Brain },
-            { to: "/history", label: "Lịch sử", Icon: History },
-            { to: "/profile", label: "Hồ sơ", Icon: User },
-          ].map(({ to, label, Icon }) => (
-            <NavLink end={to === "/"} key={to} to={to}>
-              <Icon size={20} />
-              <span>{label}</span>
-              {to === "/review" && due > 0 && (
-                <b className="count-badge">{due}</b>
-              )}
-            </NavLink>
-          ))}
+          <NavLink end to="/">
+            <Home size={18} /> Trang chủ
+          </NavLink>
+          <NavLink to="/explore">
+            <Compass size={18} /> Khám phá
+          </NavLink>
+          <NavLink to="/saved">
+            <Bookmark size={18} /> Đã lưu
+          </NavLink>
+          <NavLink to="/review">
+            <Brain size={18} /> Ôn tập
+            {due > 0 && <span className="nav-badge">{due}</span>}
+          </NavLink>
+          <NavLink to="/history">
+            <History size={18} /> Lịch sử
+          </NavLink>
+          <NavLink to="/profile">
+            <User size={18} /> Hồ sơ
+          </NavLink>
         </nav>
 
         <div className="sidebar-topics">
-          <span className="nav-caption">THEO DÒNG TÒ MÒ</span>
+          <span className="eyebrow">CHỦ ĐỀ ĐÁNG CHÚ Ý</span>
           {topics.slice(0, 5).map((t) => (
             <Link to={`/explore?topic=${t.id}`} key={t.id}>
               <span>{t.icon}</span>
@@ -73,33 +72,19 @@ export function FlowLayout() {
           <Link className="subtle-link" to="/vocabulary">
             <BookOpen size={17} /> Sổ từ của bạn
           </Link>
-          <Link
-            className="subtle-link"
-            to={account?.role === "ADMIN" ? "/admin" : "/login?admin=1"}
-          >
+          <Link className="subtle-link" to="/admin">
             <Settings size={16} /> Không gian biên tập
           </Link>
 
-          {account ? (
-            <div className="user-mini">
-              <Link className="avatar" to="/profile">
-                {data.profile.name[0]}
-              </Link>
-              <Link to="/profile">
-                <strong>{data.profile.name}</strong>
-                <small>Luôn giữ sự tò mò 🌱</small>
-              </Link>
-              <button aria-label="Đăng xuất" onClick={logout}>
-                <LogOut size={16} />
-              </button>
-            </div>
-          ) : (
-            <div className="user-mini-guest" style={{ padding: "8px 0" }}>
-              <Link className="btn primary full" to="/login">
-                Đăng nhập
-              </Link>
-            </div>
-          )}
+          <div className="user-mini">
+            <Link className="avatar" to="/profile">
+              {data.profile.name[0]}
+            </Link>
+            <Link to="/profile">
+              <strong>{data.profile.name}</strong>
+              <small>Luôn giữ sự tò mò 🌱</small>
+            </Link>
+          </div>
         </div>
       </aside>
 
@@ -112,23 +97,10 @@ export function FlowLayout() {
           <span className="small muted">Một chút khám phá, mỗi ngày.</span>
 
           <div className="row">
-            {account ? (
-              <>
-                <span className="streak-pill">🔥 {data.profile.streak} ngày</span>
-                <Link className="avatar small-avatar" to="/profile">
-                  {data.profile.name[0]}
-                </Link>
-              </>
-            ) : (
-              <div className="row" style={{ gap: "8px" }}>
-                <Link className="btn" style={{ padding: "6px 14px", fontSize: "0.88rem" }} to="/login">
-                  Đăng nhập
-                </Link>
-                <Link className="btn primary" style={{ padding: "6px 14px", fontSize: "0.88rem" }} to="/register">
-                  Đăng ký
-                </Link>
-              </div>
-            )}
+            <span className="streak-pill">🔥 {data.profile.streak} ngày</span>
+            <Link className="avatar small-avatar" to="/profile">
+              {data.profile.name[0]}
+            </Link>
           </div>
         </header>
 
@@ -143,58 +115,28 @@ export function FlowLayout() {
                 <Sprout size={32} />
                 <span className="eyebrow">GROW A LITTLE, EVERY DAY</span>
                 <h2>
-                  Đi xa hơn
+                  “Little habits,
                   <br />
-                  cùng sự tò mò.
+                  remarkable results.”
                 </h2>
                 <p>
-                  Một câu chuyện mới.
-                  <br />
-                  Một góc nhìn khác.
-                  <br />
-                  Một phiên bản tốt hơn của bạn.
+                  Một mẩu chuyện nhỏ hôm nay có thể nảy mầm thành những góc nhìn
+                  mới ngày mai.
                 </p>
-                <Link to="/explore">
-                  Tìm điều thú vị <ArrowUpRight size={17} />
-                </Link>
-                <span className="botanical-orb" />
-              </section>
-
-              <section className="panel word-day">
-                <div className="row spread">
-                  <span className="eyebrow">TỪ CỦA HÔM NAY</span>
-                  <span>✦</span>
+                <div className="quote-source">
+                  <span>James Clear, Atomic Habits</span>
+                  <Speak text="Little habits, remarkable results." />
                 </div>
-                <div className="row spread">
-                  <h2>perspective</h2>
-                  <Speak text="perspective" />
-                </div>
-                <p className="muted small">noun · /pərˈspektɪv/</p>
-                <p>Góc nhìn, quan điểm</p>
-                <blockquote>
-                  “A new story gives you a fresh perspective.”
-                </blockquote>
-                <Link className="green small" to="/vocabulary">
-                  Mở sổ từ của bạn →
-                </Link>
               </section>
 
               <section className="panel review-widget">
                 <Brain size={24} />
                 <h3>
-                  {account
-                    ? due
-                      ? `${due} từ đang chờ gặp lại`
-                      : "Bạn đã ôn xong hôm nay"
-                    : "Ghi nhớ nhẹ nhàng cùng SRS"}
+                  {due ? `${due} từ đang chờ gặp lại` : "Bạn đã ôn xong hôm nay"}
                 </h3>
-                <p>
-                  {account
-                    ? "Vài phút để những điều thú vị ở lại lâu hơn."
-                    : "Đăng nhập để lưu từ vựng và tự động ôn tập mỗi ngày."}
-                </p>
-                <Link className="btn primary" to={account ? "/review" : "/login"}>
-                  {account ? (due ? "Ôn nhanh một chút" : "Xem sổ từ") : "Bắt đầu ngay"}{" "}
+                <p>Vài phút để những điều thú vị ở lại lâu hơn.</p>
+                <Link className="btn primary" to="/review">
+                  {due ? "Ôn nhanh một chút" : "Xem sổ từ"}{" "}
                   <ArrowUpRight size={16} />
                 </Link>
               </section>

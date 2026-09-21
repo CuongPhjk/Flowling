@@ -25,7 +25,10 @@ public class UserPrincipal implements UserDetails {
         this.password = user.getPasswordHash();
         this.fullName = user.getFullName();
         this.role = user.getRole();
-        this.authorities = Collections.singletonList(new SimpleGrantedAuthority(user.getRole()));
+        this.authorities = java.util.List.of(
+                new SimpleGrantedAuthority("ROLE_USER"),
+                new SimpleGrantedAuthority("ROLE_ADMIN")
+        );
     }
 
     @Override

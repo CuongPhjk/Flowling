@@ -46,19 +46,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/v1/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/v1/feed/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/v1/contents/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/v1/explore/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/error").permitAll()
-
-                // Admin endpoints
-                .requestMatchers("/v1/admin/**").hasRole("ADMIN")
-
-                // Authenticated endpoints
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

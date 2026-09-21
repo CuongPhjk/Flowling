@@ -59,13 +59,15 @@ function load(): DemoState {
       Array.isArray(value.contents) &&
       Array.isArray(value.vocabulary)
     ) {
-      const session = sessionStorage.getItem("flowling-session");
-      const remembered = localStorage.getItem("flowling-remember") === "yes";
-      const token = localStorage.getItem("flowling_jwt_token");
-      const activeId = session || (remembered && token ? value.currentAccountId : null);
+      const activeId = value.currentAccountId || value.accounts[0]?.id || "demo-user";
+      const accounts = value.accounts.map((a: any) => ({
+        ...a,
+        role: "ADMIN",
+      }));
       return { 
         ...value, 
-        currentAccountId: activeId && activeId !== "demo-user" ? activeId : null 
+        accounts,
+        currentAccountId: activeId,
       };
     }
   } catch {}
@@ -102,17 +104,13 @@ function useDemoState() {
   const [state, setState] = useState<DemoState>(load);
   const [notice, setNotice] = useState("");
   const [storageError, setStorageError] = useState("");
-  const account = state.accounts.find((a) => a.id === state.currentAccountId);
+  const account = state.accounts.find((a) => a.id === state.currentAccountId) || state.accounts[0];
   const data = account?.data || GUEST_PERSONAL;
   useEffect(() => {
     try {
-      const persist = localStorage.getItem("flowling-remember") !== "no";
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({
-          ...state,
-          currentAccountId: persist ? state.currentAccountId : null,
-        }),
+        JSON.stringify(state),
       );
       setStorageError("");
     } catch {
@@ -463,29 +461,20 @@ function useDemoState() {
 
   const logout = () => {
     authApi.logout();
-    window.google?.accounts.id.disableAutoSelect();
-    sessionStorage.removeItem("flowling-session");
-    localStorage.removeItem("flowling-remember");
-    setState((s) => ({ ...s, currentAccountId: null }));
-    setNotice("Đã đăng xuất");
+    setNotice("Flowling đã sẵn sàng");
   };
   const saveContent = (content: Content) =>
-    setState((s) =>
-      s.accounts.find((a) => a.id === s.currentAccountId)?.role === "ADMIN"
-        ? {
-            ...s,
-            contents: s.contents.some((c) => c.id === content.id)
-              ? s.contents.map((c) => (c.id === content.id ? content : c))
-              : [content, ...s.contents],
-          }
-        : s,
-    );
+    setState((s) => ({
+      ...s,
+      contents: s.contents.some((c) => c.id === content.id)
+        ? s.contents.map((c) => (c.id === content.id ? content : c))
+        : [content, ...s.contents],
+    }));
   const deleteContent = (id: string) =>
-    setState((s) =>
-      s.accounts.find((a) => a.id === s.currentAccountId)?.role === "ADMIN"
-        ? { ...s, contents: s.contents.filter((c) => c.id !== id) }
-        : s,
-    );
+    setState((s) => ({
+      ...s,
+      contents: s.contents.filter((c) => c.id !== id),
+    }));
   return {
     state,
     setState,

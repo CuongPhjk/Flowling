@@ -23,7 +23,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1/admin")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminContentController {
 

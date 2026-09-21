@@ -164,9 +164,7 @@ export function Cover({
   );
 }
 export function ContentCard({ content: c }: { content: Content }) {
-  const { data, account, toggleSave, toggleLike } = useDemo();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { data, toggleSave, toggleLike } = useDemo();
   const Icon =
     c.type === "ARTICLE" ? BookOpen : c.type === "PODCAST" ? Headphones : Play;
 
@@ -175,19 +173,11 @@ export function ContentCard({ content: c }: { content: Content }) {
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!account) {
-      navigate("/login", { state: { from: location } });
-      return;
-    }
     toggleLike(c.id);
   };
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!account) {
-      navigate("/login", { state: { from: location } });
-      return;
-    }
     toggleSave(c.id);
   };
 

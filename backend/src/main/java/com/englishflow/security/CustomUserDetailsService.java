@@ -29,4 +29,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
         return new UserPrincipal(user);
     }
+
+    @Transactional(readOnly = true)
+    public UserDetails loadDefaultUser() {
+        return userRepository.findByEmail("minh@flowling.demo")
+                .or(() -> userRepository.findAll().stream().findFirst())
+                .map(UserPrincipal::new)
+                .orElse(null);
+    }
 }

@@ -52,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
                 .email("minh@flowling.demo")
                 .passwordHash(passwordEncoder.encode("Flowling123!"))
                 .fullName("Minh Nguyễn")
-                .role("ROLE_USER")
+                .role("ROLE_ADMIN")
                 .currentStreak(7)
                 .totalXp(340)
                 .avatarUrl("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
