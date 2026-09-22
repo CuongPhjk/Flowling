@@ -204,6 +204,8 @@ public class AdminContentService {
         if (!contentRepository.existsById(id)) {
             throw new AppException(ErrorCode.CONTENT_NOT_FOUND);
         }
+        articleRepository.deleteByContentId(id);
+        transcriptSegmentRepository.deleteByContentId(id);
         contentRepository.deleteById(id);
     }
 

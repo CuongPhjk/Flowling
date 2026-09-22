@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, X, BookmarkPlus, Check, Loader2, Sparkles } from "lucide-react";
 import { VocabularyLookupResult } from "../../../shared/api/readflowApi";
+import { vocabularyApi } from "../../../shared/api";
 import { useDemo, uid } from "../../../app/providers";
 
 interface WordPopupProps {
@@ -90,6 +91,17 @@ export function WordPopup({
       translation: data?.exampleTranslation || data?.meaning || "",
       note: "Được lưu từ Trợ lý đọc song ngữ ReadFlow",
     });
+
+    vocabularyApi
+      .saveWord({
+        term: currentWord,
+        partOfSpeech: vocabEntry.pos,
+        meaningVi: vocabEntry.meaning,
+        phonetic: vocabEntry.ipa,
+        sentence: contextSentence || data?.example || currentWord,
+        translation: data?.exampleTranslation || data?.meaning || "",
+      })
+      .catch((err) => console.warn("Lỗi lưu từ vựng lên server:", err));
 
     setIsSaved(true);
     notify(`Đã lưu "${currentWord}" vào Sổ từ & hệ thống ôn tập SRS 🌱`);

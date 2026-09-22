@@ -9,21 +9,55 @@ import {
   MarkdownBlock,
   InlineMarkdown,
 } from "../../../shared/components/Markdown";
+import { contentApi, progressApi, toDemoDetail } from "../../../shared/api";
+import type { Content } from "../../../shared/types/demo";
+
 export function ArticlePage() {
   const { slug } = useParams();
   const { state, account, data, toggleSave, track } = useDemo();
-  const content = state.contents.find(
+  const localContent = state.contents.find(
     (c) =>
       c.slug === slug &&
       c.type === "ARTICLE" &&
       (c.status === "PUBLISHED" || account?.role === "ADMIN"),
   );
+  const [cloudContent, setCloudContent] = useState<Content | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (slug) {
+      setLoading(true);
+      contentApi
+        .getContentBySlug(slug)
+        .then((res) => {
+          if (res) {
+            setCloudContent(toDemoDetail(res));
+          }
+        })
+        .catch((err) => {
+          console.warn("Lỗi tải bài viết từ cloud:", err);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [slug]);
+
+  const content = cloudContent || localContent;
   const [mode, setMode] = useState("English"),
     [size, setSize] = useState(18);
   const reader = useRef<HTMLElement>(null);
   const [percent, setPercent] = useState(0);
   const trackRef = useRef(track);
   trackRef.current = track;
+
+  const handleToggleSave = () => {
+    if (!content) return;
+    toggleSave(content.id);
+    const numId = Number(content.id);
+    if (!isNaN(numId)) {
+      progressApi.toggleSave(numId).catch(() => {});
+    }
+  };
+
   useEffect(() => {
     if (!content) return;
     let elapsed = 0;
@@ -42,6 +76,16 @@ export function ArticlePage() {
       if (document.visibilityState === "visible") elapsed++;
       if (elapsed >= 5) {
         trackRef.current(content, percent, window.scrollY, elapsed);
+        const numId = Number(content.id);
+        if (!isNaN(numId)) {
+          progressApi
+            .updateProgress(numId, {
+              progressPercentage: Math.round(percent),
+              lastPositionSeconds: Math.round(window.scrollY),
+              isCompleted: percent > 85,
+            })
+            .catch(() => {});
+        }
         elapsed = 0;
       }
     }, 1000);
@@ -57,6 +101,10 @@ export function ArticlePage() {
       trackRef.current(content, percent, window.scrollY, elapsed);
     };
   }, [content?.id]);
+
+  if (loading && !content) {
+    return <div className="panel" style={{ padding: "60px", textAlign: "center" }}>Đang tải bài viết...</div>;
+  }
   if (!content) return <Empty title="Không tìm thấy bài viết" />;
   return (
     <>
@@ -83,7 +131,7 @@ export function ArticlePage() {
           className="icon-btn"
           aria-label="Lưu bài viết"
           aria-pressed={data.saved.includes(content.id)}
-          onClick={() => toggleSave(content.id)}
+          onClick={handleToggleSave}
         >
           <Bookmark
             fill={data.saved.includes(content.id) ? "currentColor" : "none"}

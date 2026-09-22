@@ -5,4 +5,5 @@ export * from "./vocabularyApi";
 export * from "./reviewApi";
 export * from "./progressApi";
 export * from "./adminApi";
+export * from "./adapters";
 export * from "./media";

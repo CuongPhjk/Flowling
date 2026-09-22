@@ -30,7 +30,7 @@ public interface UserVocabularyRepository extends JpaRepository<UserVocabulary, 
     @Query("SELECT uv FROM UserVocabulary uv JOIN FETCH uv.vocabulary v " +
            "WHERE uv.user.id = :userId " +
            "AND (:status IS NULL OR uv.status = :status) " +
-           "AND (:query IS NULL OR LOWER(v.term) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(v.meaningVi) LIKE LOWER(CONCAT('%', :query, '%')))")
+           "AND (:query IS NULL OR LOWER(v.term) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR LOWER(v.meaningVi) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')))")
     Page<UserVocabulary> findUserWordBank(
             @Param("userId") Long userId,
             @Param("status") VocabStatus status,

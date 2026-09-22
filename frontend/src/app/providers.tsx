@@ -271,7 +271,10 @@ function useDemoState() {
 
     try {
       const authRes = await authApi.login({ email: normalizedEmail, password });
-      userRole = authRes.role === "ADMIN" ? "ADMIN" : "USER";
+      userRole =
+        authRes.role === "ADMIN" || authRes.role === "ROLE_ADMIN"
+          ? "ADMIN"
+          : "USER";
       accountId = String(authRes.id);
       userName = authRes.fullName || authRes.email.split("@")[0];
     } catch (apiErr: any) {
@@ -340,7 +343,10 @@ function useDemoState() {
         password,
       });
       accountId = String(authRes.id);
-      userRole = authRes.role === "ADMIN" ? "ADMIN" : "USER";
+      userRole =
+        authRes.role === "ADMIN" || authRes.role === "ROLE_ADMIN"
+          ? "ADMIN"
+          : "USER";
     } catch (apiErr: any) {
       if (apiErr?.response?.data?.message) {
         throw new Error(apiErr.response.data.message);

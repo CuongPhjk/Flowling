@@ -5,6 +5,7 @@ import { useDemo } from "../../../app/providers";
 import type { Grade } from "../../../shared/types/demo";
 import { PageHeading, Speak, Empty } from "../../../shared/components/ui";
 import { schedule } from "../services/srs";
+import { reviewApi } from "../../../shared/api";
 export function ReviewSession({
   limit = 12,
   onDone,
@@ -42,6 +43,10 @@ export function ReviewSession({
     lock.current = true;
     const first = !reviewed.current.has(word.id);
     grade(word.id, value, first);
+    const numId = Number(word.id);
+    if (!isNaN(numId)) {
+      reviewApi.submitReview(numId, value).catch(() => {});
+    }
     reviewed.current.add(word.id);
     setCount(reviewed.current.size);
     if (value === "AGAIN" && queue.length < Math.min(20, initial.current * 2))

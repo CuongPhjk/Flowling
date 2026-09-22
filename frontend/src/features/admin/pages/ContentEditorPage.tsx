@@ -22,6 +22,12 @@ import {
   InlineMarkdown,
   MarkdownBlock,
 } from "../../../shared/components/Markdown";
+import {
+  adminApi,
+  contentApi,
+  toCreateContentPayload,
+  toDemoDetail,
+} from "../../../shared/api";
 const slugify = (s: string) =>
   s
     .normalize("NFD")
@@ -35,7 +41,7 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
   const [params] = useSearchParams();
   const { state, saveContent, notify } = useDemo();
   const navigate = useNavigate();
-  const existing = state.contents.find((c) => c.id === id);
+  const existing = state.contents.find((c) => c.id === id || c.slug === id);
   const [draft, setDraft] = useState<Content>(
     () =>
       existing || {
@@ -70,6 +76,7 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
   const [error, setError] = useState(""),
     [preview, setPreview] = useState(false),
     [busy, setBusy] = useState(false),
+    [cloudLoaded, setCloudLoaded] = useState(false),
     [extracted, setExtracted] = useState<string[]>([]);
   const dirty = useRef(false);
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -90,7 +97,32 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
         type: params.get("type") === "VIDEO" ? "VIDEO" : "PODCAST",
       }));
   }, [params.get("type")]);
-  if (id !== "new" && !existing)
+
+  useEffect(() => {
+    if (id && id !== "new" && !existing) {
+      setBusy(true);
+      contentApi
+        .getContentBySlug(id)
+        .then((detail) => {
+          if (detail) {
+            const loaded = toDemoDetail(detail);
+            setDraft(loaded);
+            setEn(loaded.paragraphs.map((p) => p.en).join("\n\n"));
+            setVi(loaded.paragraphs.map((p) => p.vi).join("\n\n"));
+            setCloudLoaded(true);
+          }
+        })
+        .catch((err) => {
+          console.warn("Không thể tải bài từ máy chủ:", err);
+        })
+        .finally(() => setBusy(false));
+    }
+  }, [id, existing]);
+
+  if (id !== "new" && !existing && !cloudLoaded && busy) {
+    return <div className="panel" style={{ padding: "40px", textAlign: "center" }}>Đang tải nội dung từ máy chủ...</div>;
+  }
+  if (id !== "new" && !existing && !cloudLoaded && !busy)
     return <Empty title="Không tìm thấy nội dung để chỉnh sửa" />;
   const change = (value: Partial<Content>) => {
     dirty.current = true;
@@ -111,7 +143,7 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
         : Math.max(60, Math.ceil(en.trim().split(/\s+/).length / 180) * 60),
     };
   };
-  const save = (publish = false, next = false) => {
+  const save = async (publish = false, next = false) => {
     const content = built();
     if (!content.title.trim()) {
       setError("Nhập tiêu đề nội dung.");
@@ -150,14 +182,36 @@ export function ContentEditorPage({ media = false }: { media?: boolean }) {
       );
       return;
     }
-    saveContent({
+
+    const finalContent: Content = {
       ...content,
       status: publish ? "PUBLISHED" : "DRAFT",
       publishedAt: publish ? Date.now() : content.publishedAt,
-    });
+    };
+
+    setBusy(true);
+    const payload = toCreateContentPayload(finalContent, en, vi);
+
+    try {
+      const numId = Number(finalContent.id);
+      if (!isNaN(numId) && id !== "new") {
+        await adminApi.updateContent(numId, payload);
+      } else {
+        const created = await adminApi.createContent(payload);
+        if (created) {
+          finalContent.id = String(created.id);
+        }
+      }
+    } catch (apiErr: any) {
+      console.warn("Lỗi lưu lên cloud:", apiErr);
+    } finally {
+      setBusy(false);
+    }
+
+    saveContent(finalContent);
     dirty.current = false;
     notify(publish ? "Đã xuất bản lên Feed" : "Đã lưu bản nháp");
-    navigate(next ? `/admin/transcript/${content.id}` : "/admin");
+    navigate(next ? `/admin/transcript/${finalContent.id}` : "/admin");
   };
   const upload = async (file: File | undefined) => {
     if (!file) return;

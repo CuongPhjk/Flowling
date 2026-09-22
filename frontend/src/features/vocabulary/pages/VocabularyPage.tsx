@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { useDemo } from "../../../app/providers";
@@ -12,14 +12,67 @@ import {
   contentPath,
 } from "../../../shared/components/ui";
 import { ContextDrawer } from "../components/WordTools";
+import { vocabularyApi } from "../../../shared/api";
+
 export function VocabularyPage() {
-  const { state, data, updatePersonal } = useDemo();
+  const { state, data, saveWord, updatePersonal } = useDemo();
   const [q, setQ] = useState(""),
     [filter, setFilter] = useState("ALL"),
     [sort, setSort] = useState("new"),
     [drawer, setDrawer] = useState(""),
     [remove, setRemove] = useState(""),
     [tab, setTab] = useState("words");
+
+  useEffect(() => {
+    const token = localStorage.getItem("flowling_jwt_token");
+    if (!token) return;
+    vocabularyApi
+      .getWordBank({ size: 100 })
+      .then((res) => {
+        if (res && res.items && res.items.length > 0) {
+          res.items.forEach((item) => {
+            saveWord(
+              {
+                id: `v-${item.vocabularyId}`,
+                word: item.term,
+                meaning: item.meaningVi,
+                ipa: item.phonetic || "",
+                pos: item.partOfSpeech || "word",
+              },
+              {
+                contentId: item.contexts[0]?.contentId
+                  ? String(item.contexts[0].contentId)
+                  : "cloud-sync",
+                sentence: item.contexts[0]?.sentence || item.term,
+                translation: item.contexts[0]?.translation || item.meaningVi,
+                note: "",
+              },
+            );
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Lỗi tải sổ từ vựng từ server:", err);
+      });
+  }, []);
+
+  const handleDeleteWord = async (wordId: string) => {
+    const numId = Number(wordId);
+    if (!isNaN(numId)) {
+      try {
+        await vocabularyApi.deleteWord(numId);
+      } catch (err) {
+        console.warn("Lỗi xóa từ vựng trên server:", err);
+      }
+    }
+    updatePersonal((p) => ({
+      ...p,
+      words: p.words.filter((w) => w.id !== wordId),
+      contexts: p.contexts.filter((c) => c.userVocabularyId !== wordId),
+    }));
+    setRemove("");
+  };
+
   const list = data.words
     .filter((w) => {
       const v = state.vocabulary.find((x) => x.id === w.vocabularyId);
@@ -194,16 +247,7 @@ export function VocabularyPage() {
             </button>
             <button
               className="btn danger"
-              onClick={() => {
-                updatePersonal((p) => ({
-                  ...p,
-                  words: p.words.filter((w) => w.id !== remove),
-                  contexts: p.contexts.filter(
-                    (c) => c.userVocabularyId !== remove,
-                  ),
-                }));
-                setRemove("");
-              }}
+              onClick={() => handleDeleteWord(remove)}
             >
               Xóa từ
             </button>

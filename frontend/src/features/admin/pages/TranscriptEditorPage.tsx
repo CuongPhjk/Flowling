@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDemo, uid } from "../../../app/providers";
+import { adminApi } from "../../../shared/api";
 import type { Segment } from "../../../shared/types/demo";
 import { PageHeading, Empty, formatTime } from "../../../shared/components/ui";
 import { importTranscript, validateSegments, translateSegments } from "../services/transcript";
@@ -102,6 +103,21 @@ export function TranscriptEditorPage() {
     if (error) {
       setError(error);
       return;
+    }
+    const numId = Number(id);
+    if (!isNaN(numId)) {
+      adminApi
+        .updateTranscripts(
+          numId,
+          rows.map((r, i) => ({
+            startMs: r.startMs,
+            endMs: r.endMs,
+            englishText: r.englishText,
+            vietnameseText: r.vietnameseText,
+            position: i,
+          })),
+        )
+        .catch((err) => console.warn("Lỗi lưu transcripts lên server:", err));
     }
     saveContent({
       ...content,

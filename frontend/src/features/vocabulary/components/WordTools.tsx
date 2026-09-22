@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDemo, uid } from "../../../app/providers";
+import { vocabularyApi } from "../../../shared/api";
 import type { Content, Vocabulary } from "../../../shared/types/demo";
 import { Modal, Speak, contentPath } from "../../../shared/components/ui";
 import { InlineMarkdown } from "../../../shared/components/Markdown";
@@ -274,6 +275,18 @@ export function WordTools({
                   note,
                   ...timing,
                 });
+                const numContentId = Number(content.id);
+                vocabularyApi
+                  .saveWord({
+                    term: selected,
+                    partOfSpeech: value.pos,
+                    meaningVi: value.meaning,
+                    phonetic: value.ipa,
+                    contentId: !isNaN(numContentId) ? numContentId : undefined,
+                    sentence: text,
+                    translation,
+                  })
+                  .catch((err) => console.warn("Lỗi lưu từ vựng lên server:", err));
                 notify("Đã lưu vào sổ từ cùng ngữ cảnh");
                 setSelected("");
               }}

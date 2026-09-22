@@ -24,8 +24,8 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
            "(:status IS NULL OR c.status = :status) AND " +
            "(:type IS NULL OR c.type = :type) AND " +
            "(:difficulty IS NULL OR c.difficulty = :difficulty) AND " +
-           "(:category IS NULL OR LOWER(c.category) = LOWER(:category)) AND " +
-           "(:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+           "(:category IS NULL OR LOWER(c.category) = LOWER(CAST(:category AS string))) AND " +
+           "(:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))")
     Page<Content> findWithFilters(
             @Param("status") ContentStatus status,
             @Param("type") ContentType type,

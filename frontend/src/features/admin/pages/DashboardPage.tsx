@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Pencil,
@@ -9,6 +9,7 @@ import {
   Headphones,
   Video,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { useDemo } from "../../../app/providers";
 import {
@@ -24,6 +25,8 @@ import {
 } from "../../../shared/components/ui";
 import { topics } from "../../../shared/mock/seed";
 import { validateSegments } from "../services/transcript";
+import { adminApi, AdminStats, toDemoContent } from "../../../shared/api";
+import type { Content } from "../../../shared/types/demo";
 
 export function DashboardPage() {
   const { state, saveContent, deleteContent, notify } = useDemo();
@@ -32,12 +35,111 @@ export function DashboardPage() {
     [status, setStatus] = useState("ALL"),
     [page, setPage] = useState(0),
     [remove, setRemove] = useState("");
-  const items = state.contents.filter(
+
+  const [cloudItems, setCloudItems] = useState<Content[] | null>(null);
+  const [cloudStats, setCloudStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchCloudData = async () => {
+    setLoading(true);
+    try {
+      const [statsRes, listRes] = await Promise.all([
+        adminApi.getStats().catch(() => null),
+        adminApi
+          .listContents({
+            size: 50,
+            status: status === "ALL" ? undefined : status,
+            type: type === "ALL" ? undefined : type,
+            keyword: query.trim() || undefined,
+          })
+          .catch(() => null),
+      ]);
+      if (statsRes) setCloudStats(statsRes);
+      if (listRes && listRes.items) {
+        setCloudItems(listRes.items.map(toDemoContent));
+      }
+    } catch (err) {
+      console.warn("Lỗi tải dữ liệu từ Cloud, sử dụng dữ liệu cục bộ:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCloudData();
+  }, [type, status, query]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const numId = Number(id);
+      if (!isNaN(numId)) {
+        await adminApi.deleteContent(numId);
+      }
+    } catch (err: any) {
+      console.warn("Lỗi khi xóa từ server:", err);
+    }
+    deleteContent(id);
+    setCloudItems((prev) => (prev ? prev.filter((c) => c.id !== id) : null));
+    notify("Đã xóa nội dung thành công");
+    setRemove("");
+    fetchCloudData();
+  };
+
+  const handleTogglePublish = async (c: Content) => {
+    if (c.status === "DRAFT") {
+      const error =
+        c.type === "ARTICLE"
+          ? !c.title.trim() ||
+            !c.paragraphs.length ||
+            c.paragraphs.some((p) => !p.en.trim() || !p.vi.trim())
+            ? "Bổ sung nội dung và bản dịch trước khi đăng."
+            : ""
+          : !c.mediaUrl
+            ? "Thêm media trước khi đăng."
+            : validateSegments(c.segments, c.duration, true);
+      if (error) {
+        notify(error);
+        return;
+      }
+    }
+
+    const numId = Number(c.id);
+    if (!isNaN(numId)) {
+      try {
+        await adminApi.togglePublish(numId);
+      } catch (err: any) {
+        console.warn("Lỗi cập nhật trạng thái xuất bản trên server:", err);
+      }
+    }
+
+    const nextStatus = c.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    saveContent({
+      ...c,
+      status: nextStatus,
+      publishedAt: Date.now(),
+    });
+    setCloudItems((prev) =>
+      prev
+        ? prev.map((item) =>
+            item.id === c.id ? { ...item, status: nextStatus } : item,
+          )
+        : null,
+    );
+    notify(
+      nextStatus === "PUBLISHED"
+        ? "Đã xuất bản lên Feed"
+        : "Đã chuyển về bản nháp",
+    );
+  };
+
+  const localFiltered = state.contents.filter(
     (c) =>
       (type === "ALL" || c.type === type) &&
       (status === "ALL" || c.status === status) &&
       c.title.toLowerCase().includes(query.toLowerCase()),
   );
+
+  const items = cloudItems !== null ? cloudItems : localFiltered;
   const currentPage = Math.min(
     page,
     Math.max(0, Math.ceil(items.length / 6) - 1),
@@ -86,8 +188,14 @@ export function DashboardPage() {
             bg: "#f3e8ff",
           },
         ].map(({ type, label, Icon, color, bg }) => {
-          const total = state.contents.filter((c) => c.type === type).length;
-          const drafts = state.contents.filter(
+          const total = cloudStats
+            ? type === "ARTICLE"
+              ? cloudStats.articlesCount
+              : type === "PODCAST"
+                ? cloudStats.podcastsCount
+                : cloudStats.videosCount
+            : items.filter((c) => c.type === type).length;
+          const drafts = items.filter(
             (c) => c.type === type && c.status === "DRAFT",
           ).length;
           const published = total - drafts;
@@ -237,36 +345,7 @@ export function DashboardPage() {
                     <button
                       className={`status-pill ${c.status === "PUBLISHED" ? "published" : "draft"}`}
                       title="Nhấp để chuyển đổi xuất bản / bản nháp"
-                      onClick={() => {
-                        if (c.status === "DRAFT") {
-                          const error =
-                            c.type === "ARTICLE"
-                              ? !c.title.trim() ||
-                                !c.paragraphs.length ||
-                                c.paragraphs.some(
-                                  (p) => !p.en.trim() || !p.vi.trim(),
-                                )
-                                ? "Bổ sung nội dung và bản dịch trước khi đăng."
-                                : ""
-                              : !c.mediaUrl
-                                ? "Thêm media trước khi đăng."
-                                : validateSegments(
-                                    c.segments,
-                                    c.duration,
-                                    true,
-                                  );
-                          if (error) {
-                            notify(error);
-                            return;
-                          }
-                        }
-                        saveContent({
-                          ...c,
-                          status:
-                            c.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
-                          publishedAt: Date.now(),
-                        });
-                      }}
+                      onClick={() => handleTogglePublish(c)}
                     >
                       <span className="status-dot" />
                       {c.status === "PUBLISHED" ? "Đã xuất bản" : "Bản nháp"}
@@ -347,11 +426,7 @@ export function DashboardPage() {
             </button>
             <button
               className="btn danger"
-              onClick={() => {
-                deleteContent(remove);
-                setRemove("");
-                notify("Đã xóa nội dung");
-              }}
+              onClick={() => handleDelete(remove)}
             >
               Xóa nội dung
             </button>

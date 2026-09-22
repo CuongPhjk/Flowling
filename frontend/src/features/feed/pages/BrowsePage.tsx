@@ -15,6 +15,9 @@ import {
   Modal,
 } from "../../../shared/components/ui";
 import { ReviewSession } from "../../flashcard/pages/ReviewPage";
+import { contentApi, toDemoContent } from "../../../shared/api";
+import type { Content } from "../../../shared/types/demo";
+
 export function BrowsePage({
   mode = "home",
 }: {
@@ -30,13 +33,54 @@ export function BrowsePage({
   const [limit, setLimit] = useState(9);
   const [quick, setQuick] = useState(false);
   const [eligible, setEligible] = useState(false);
+  const [cloudItems, setCloudItems] = useState<Content[] | null>(null);
+  const [loading, setLoading] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
   const seen = useRef(new Set<string>());
   const topic = params.get("topic") || "";
   const due = account ? data.words.filter((w) => w.nextReviewAt <= Date.now()).length : 0;
+
+  useEffect(() => {
+    let active = true;
+    const fetchFeed = async () => {
+      setLoading(true);
+      try {
+        const res = await contentApi.getFeed({
+          type: type === "ALL" ? undefined : type,
+          difficulty: difficulty === "ALL" ? undefined : difficulty.toUpperCase(),
+          category: topic ? topic : undefined,
+          keyword: query.trim() || undefined,
+          size: 50,
+        });
+        if (active && res && res.items && res.items.length > 0) {
+          setCloudItems(res.items.map(toDemoContent));
+        }
+      } catch (err) {
+        console.warn("Lỗi tải feed từ cloud, sử dụng dữ liệu cục bộ:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchFeed();
+    return () => {
+      active = false;
+    };
+  }, [type, difficulty, topic, query]);
+
+  const sourceContents = useMemo(() => {
+    if (!cloudItems || cloudItems.length === 0) return state.contents;
+    // Merge cloud items with any local items that have unique ids/slugs
+    const cloudIds = new Set(cloudItems.map((c) => c.id));
+    const cloudSlugs = new Set(cloudItems.map((c) => c.slug));
+    const localExtra = state.contents.filter(
+      (c) => !cloudIds.has(c.id) && !cloudSlugs.has(c.slug),
+    );
+    return [...cloudItems, ...localExtra];
+  }, [cloudItems, state.contents]);
+
   const items = useMemo(
     () =>
-      state.contents
+      sourceContents
         .filter(
           (c) =>
             c.status === "PUBLISHED" &&
@@ -64,7 +108,7 @@ export function BrowsePage({
                 : b.publishedAt - a.publishedAt,
         ),
     [
-      state.contents,
+      sourceContents,
       data.saved,
       mode,
       topic,

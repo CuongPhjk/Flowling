@@ -21,16 +21,40 @@ import {
   Tabs,
 } from "../../../shared/components/ui";
 import { WordTools } from "../../vocabulary/components/WordTools";
+import { contentApi, progressApi, toDemoDetail } from "../../../shared/api";
+import type { Content } from "../../../shared/types/demo";
+
 export function MediaPage() {
   const { slug } = useParams();
   const { state, account, data, track, toggleSave, updatePersonal, notify } =
     useDemo();
-  const content = state.contents.find(
+  const localContent = state.contents.find(
     (c) =>
       c.slug === slug &&
       c.type !== "ARTICLE" &&
       (c.status === "PUBLISHED" || account?.role === "ADMIN"),
   );
+  const [cloudContent, setCloudContent] = useState<Content | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (slug) {
+      setLoading(true);
+      contentApi
+        .getContentBySlug(slug)
+        .then((res) => {
+          if (res) {
+            setCloudContent(toDemoDetail(res));
+          }
+        })
+        .catch((err) => {
+          console.warn("Lỗi tải media từ cloud:", err);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [slug]);
+
+  const content = cloudContent || localContent;
   const [params] = useSearchParams();
   const { url, error } = useMediaUrl(content?.mediaUrl || "");
   const sync = useTranscriptSync(content?.segments || []);
@@ -101,8 +125,19 @@ export function MediaPage() {
     let elapsed = 0;
     const save = () => {
       const s = syncRef.current;
-      if (s.duration)
+      if (s.duration) {
         trackRef.current(content, (s.time / s.duration) * 100, s.time, elapsed);
+        const numId = Number(content.id);
+        if (!isNaN(numId)) {
+          progressApi
+            .updateProgress(numId, {
+              progressPercentage: Math.round((s.time / s.duration) * 100),
+              lastPositionSeconds: Math.round(s.time),
+              isCompleted: s.time / s.duration > 0.85,
+            })
+            .catch(() => {});
+        }
+      }
       elapsed = 0;
     };
     const interval = setInterval(() => {
@@ -114,6 +149,9 @@ export function MediaPage() {
       save();
     };
   }, [content?.id]);
+  if (loading && !content) {
+    return <div className="panel" style={{ padding: "60px", textAlign: "center" }}>Đang tải nội dung...</div>;
+  }
   if (!content) return <Empty title="Không tìm thấy nội dung" />;
   const play = () =>
     sync
