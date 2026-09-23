@@ -68,14 +68,8 @@ export function BrowsePage({
   }, [type, difficulty, topic, query]);
 
   const sourceContents = useMemo(() => {
-    if (!cloudItems || cloudItems.length === 0) return state.contents;
-    // Merge cloud items with any local items that have unique ids/slugs
-    const cloudIds = new Set(cloudItems.map((c) => c.id));
-    const cloudSlugs = new Set(cloudItems.map((c) => c.slug));
-    const localExtra = state.contents.filter(
-      (c) => !cloudIds.has(c.id) && !cloudSlugs.has(c.slug),
-    );
-    return [...cloudItems, ...localExtra];
+    if (cloudItems && cloudItems.length > 0) return cloudItems;
+    return state.contents;
   }, [cloudItems, state.contents]);
 
   const items = useMemo(

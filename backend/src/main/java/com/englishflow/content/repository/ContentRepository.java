@@ -7,33 +7,28 @@ import com.englishflow.content.entity.Difficulty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface ContentRepository extends JpaRepository<Content, Long> {
+public interface ContentRepository extends JpaRepository<Content, Long>, JpaSpecificationExecutor<Content> {
 
     Optional<Content> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
 
-    @Query("SELECT c FROM Content c WHERE " +
-           "(:status IS NULL OR c.status = :status) AND " +
-           "(:type IS NULL OR c.type = :type) AND " +
-           "(:difficulty IS NULL OR c.difficulty = :difficulty) AND " +
-           "(:category IS NULL OR LOWER(c.category) = LOWER(CAST(:category AS string))) AND " +
-           "(:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))")
-    Page<Content> findWithFilters(
-            @Param("status") ContentStatus status,
-            @Param("type") ContentType type,
-            @Param("difficulty") Difficulty difficulty,
-            @Param("category") String category,
-            @Param("keyword") String keyword,
+    default Page<Content> findWithFilters(
+            ContentStatus status,
+            ContentType type,
+            Difficulty difficulty,
+            String category,
+            String keyword,
             Pageable pageable
-    );
+    ) {
+        return findAll(ContentSpecification.withFilters(status, type, difficulty, category, keyword), pageable);
+    }
 
     long countByStatus(ContentStatus status);
 }

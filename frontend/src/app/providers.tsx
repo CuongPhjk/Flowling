@@ -8,6 +8,11 @@ import {
 import { createPersonal, createSeed, dayKey } from "../shared/mock/seed";
 import { schedule } from "../features/flashcard/services/srs";
 import { authApi } from "../shared/api/authApi";
+import { progressApi } from "../shared/api/progressApi";
+import { vocabularyApi } from "../shared/api/vocabularyApi";
+import { reviewApi } from "../shared/api/reviewApi";
+import { contentApi } from "../shared/api/contentApi";
+import { toDemoContent } from "../shared/api/adapters";
 import type {
   Content,
   DemoState,
@@ -134,13 +139,214 @@ function useDemoState() {
         a.id === s.currentAccountId ? { ...a, data: fn(a.data) } : a,
       ),
     }));
-  const toggleSave = (id: string) =>
+  const syncWithBackend = async () => {
+    // 1. Always sync global feed contents from backend
+    try {
+      const feedRes = await contentApi.getFeed({ size: 50 });
+      if (feedRes && feedRes.items && feedRes.items.length > 0) {
+        const cloudContents = feedRes.items.map(toDemoContent);
+        setState((prev) => {
+          const cloudIds = new Set(cloudContents.map((c) => c.id));
+          const localOnly = prev.contents.filter((c) => !cloudIds.has(c.id));
+          return {
+            ...prev,
+            contents: [...cloudContents, ...localOnly],
+          };
+        });
+      }
+    } catch (feedErr) {
+      console.warn("Lỗi nạp feed từ cloud:", feedErr);
+    }
+
+    // 2. Sync user personal data if token exists
+    const token = localStorage.getItem("flowling_jwt_token");
+    if (!token) return;
+
+    try {
+      const me = await authApi.getMe();
+      if (!me) return;
+
+      const accountId = String(me.id);
+      const userRole: "USER" | "ADMIN" =
+        me.role === "ROLE_ADMIN" || me.role === "ADMIN" ? "ADMIN" : "USER";
+
+      // Fetch saved items from cloud
+      let savedIds: string[] = [];
+      try {
+        const savedRes = await progressApi.getSaved(0, 100);
+        if (savedRes && savedRes.items) {
+          savedIds = savedRes.items.map((item) => String(item.id));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch saved items from cloud", err);
+      }
+
+      // Fetch wordbank from cloud
+      let cloudWords: any[] = [];
+      let cloudContexts: any[] = [];
+      let cloudVocabEntries: Vocabulary[] = [];
+      try {
+        const vocabRes = await vocabularyApi.getWordBank({ size: 200 });
+        if (vocabRes && vocabRes.items) {
+          vocabRes.items.forEach((item) => {
+            const vocabId = `v-${item.vocabularyId}`;
+            cloudVocabEntries.push({
+              id: vocabId,
+              word: item.term,
+              meaning: item.meaningVi,
+              ipa: item.phonetic || "",
+              pos: item.partOfSpeech || "word",
+            });
+
+            cloudWords.push({
+              id: String(item.id),
+              vocabularyId: vocabId,
+              status: item.status,
+              ease: item.easeFactor,
+              interval: item.intervalDays,
+              repetitions: item.repetitions,
+              nextReviewAt: new Date(item.nextReviewAt).getTime(),
+              createdAt: new Date(item.createdAt).getTime(),
+            });
+
+            if (item.contexts && item.contexts.length > 0) {
+              item.contexts.forEach((ctx) => {
+                cloudContexts.push({
+                  id: String(ctx.id),
+                  userVocabularyId: String(item.id),
+                  contentId: ctx.contentId ? String(ctx.contentId) : "cloud-sync",
+                  sentence: ctx.sentence,
+                  translation: ctx.translation || item.meaningVi,
+                  note: "",
+                  createdAt: new Date(ctx.createdAt).getTime(),
+                });
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to fetch word bank from cloud", err);
+      }
+
+      // Fetch history from cloud
+      let cloudProgress: any[] = [];
+      try {
+        const historyRes = await progressApi.getHistory(0, 50);
+        if (historyRes && historyRes.items) {
+          cloudProgress = historyRes.items.map((item) => ({
+            contentId: String(item.content.id),
+            percent: item.progressPercentage,
+            position: item.lastPositionSeconds,
+            seconds: item.lastPositionSeconds,
+            updatedAt: new Date(item.updatedAt).getTime(),
+            rewarded: item.isCompleted,
+          }));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch history from cloud", err);
+      }
+
+      // Update state with cloud data
+      setState((prev) => {
+        const existingAcc = prev.accounts.find(
+          (a) => a.id === accountId || a.email === me.email.toLowerCase()
+        );
+        const baseData = existingAcc
+          ? existingAcc.data
+          : createPersonal(me.fullName || me.email.split("@")[0], me.email, false);
+
+        const mergedSaved = Array.from(
+          new Set([...savedIds, ...(baseData.saved || [])])
+        );
+
+        // Merge words
+        const wordMap = new Map<string, any>();
+        cloudWords.forEach((w) => wordMap.set(w.vocabularyId, w));
+        (baseData.words || []).forEach((w) => {
+          if (!wordMap.has(w.vocabularyId)) wordMap.set(w.vocabularyId, w);
+        });
+
+        // Merge contexts
+        const contextMap = new Map<string, any>();
+        cloudContexts.forEach((c) =>
+          contextMap.set(`${c.userVocabularyId}-${c.sentence}`, c)
+        );
+        (baseData.contexts || []).forEach((c) => {
+          const key = `${c.userVocabularyId}-${c.sentence}`;
+          if (!contextMap.has(key)) contextMap.set(key, c);
+        });
+
+        // Merge progress
+        const progressMap = new Map<string, any>();
+        cloudProgress.forEach((p) => progressMap.set(p.contentId, p));
+        (baseData.progress || []).forEach((p) => {
+          if (!progressMap.has(p.contentId)) progressMap.set(p.contentId, p);
+        });
+
+        // Merge global vocabulary
+        const vocabMap = new Map<string, Vocabulary>();
+        prev.vocabulary.forEach((v) => vocabMap.set(v.word.toLowerCase(), v));
+        cloudVocabEntries.forEach((v) => vocabMap.set(v.word.toLowerCase(), v));
+
+        const updatedAccount = {
+          id: accountId,
+          email: me.email.toLowerCase(),
+          passwordHash: existingAcc?.passwordHash || "",
+          role: userRole,
+          data: {
+            ...baseData,
+            profile: {
+              ...baseData.profile,
+              name: me.fullName || baseData.profile.name,
+              email: me.email,
+              avatar: me.avatarUrl || baseData.profile.avatar,
+              streak: me.currentStreak ?? baseData.profile.streak,
+              xp: me.totalXp ?? baseData.profile.xp,
+            },
+            saved: mergedSaved,
+            words: Array.from(wordMap.values()),
+            contexts: Array.from(contextMap.values()),
+            progress: Array.from(progressMap.values()),
+          },
+        };
+
+        return {
+          ...prev,
+          currentAccountId: accountId,
+          vocabulary: Array.from(vocabMap.values()),
+          accounts: [
+            ...prev.accounts.filter(
+              (a) => a.id !== accountId && a.email !== me.email.toLowerCase()
+            ),
+            updatedAccount,
+          ],
+        };
+      });
+    } catch (err) {
+      console.warn("Lỗi đồng bộ dữ liệu từ cloud:", err);
+    }
+  };
+
+  useEffect(() => {
+    syncWithBackend();
+  }, []);
+
+  const toggleSave = (id: string) => {
     updatePersonal((p) => ({
       ...p,
       saved: p.saved.includes(id)
         ? p.saved.filter((x) => x !== id)
         : [id, ...p.saved],
     }));
+
+    const numId = Number(id);
+    if (!isNaN(numId)) {
+      progressApi.toggleSave(numId).catch((err) => {
+        console.warn("Lỗi đồng bộ toggleSave lên cloud:", err);
+      });
+    }
+  };
+
   const toggleLike = (id: string) =>
     updatePersonal((p) => ({
       ...p,
@@ -148,6 +354,7 @@ function useDemoState() {
         ? p.liked.filter((x) => x !== id)
         : [...p.liked, id],
     }));
+
   const saveWord = (
     entry: Vocabulary,
     context: Omit<VocabularyContext, "id" | "userVocabularyId" | "createdAt">,
@@ -217,13 +424,29 @@ function useDemoState() {
         }),
       };
     });
+
+    const numContentId = Number(context.contentId);
+    vocabularyApi
+      .saveWord({
+        term: entry.word,
+        partOfSpeech: entry.pos,
+        meaningVi: entry.meaning,
+        phonetic: entry.ipa,
+        contentId: !isNaN(numContentId) ? numContentId : undefined,
+        sentence: context.sentence,
+        translation: context.translation,
+      })
+      .catch((err) => {
+        console.warn("Lỗi đồng bộ saveWord lên cloud:", err);
+      });
   };
+
   const track = (
     content: Content,
     percent: number,
     position: number,
     seconds: number,
-  ) =>
+  ) => {
     updatePersonal((p) => {
       const old = p.progress.find((x) => x.contentId === content.id);
       const totalSeconds = (old?.seconds || 0) + seconds;
@@ -249,7 +472,22 @@ function useDemoState() {
         next = reward(next, content.type === "ARTICLE" ? 20 : 25, true);
       return next;
     });
-  const grade = (id: string, value: Grade, award = true) =>
+
+    const numId = Number(content.id);
+    if (!isNaN(numId)) {
+      progressApi
+        .updateProgress(numId, {
+          progressPercentage: Math.round(percent),
+          lastPositionSeconds: Math.round(position),
+          isCompleted: percent >= 80,
+        })
+        .catch((err) => {
+          console.warn("Lỗi đồng bộ progress lên cloud:", err);
+        });
+    }
+  };
+
+  const grade = (id: string, value: Grade, award = true) => {
     updatePersonal((p) => {
       const today = dayKey();
       const count = (p.reviewsToday[today] || 0) + (award ? 1 : 0);
@@ -263,6 +501,15 @@ function useDemoState() {
         count >= 5,
       );
     });
+
+    const numId = Number(id);
+    if (!isNaN(numId)) {
+      reviewApi.submitReview(numId, value).catch((err) => {
+        console.warn("Lỗi đồng bộ review grade lên cloud:", err);
+      });
+    }
+  };
+
   const login = async (email: string, password: string, remember: boolean) => {
     const normalizedEmail = email.trim().toLowerCase();
     let userRole: "USER" | "ADMIN" = "USER";
@@ -325,6 +572,10 @@ function useDemoState() {
       }
     });
 
+    setTimeout(() => {
+      syncWithBackend();
+    }, 50);
+
     return userRole;
   };
 
@@ -374,6 +625,10 @@ function useDemoState() {
         },
       ],
     }));
+
+    setTimeout(() => {
+      syncWithBackend();
+    }, 50);
   };
 
   const googleLogin = async (credential: string, remember: boolean) => {
@@ -462,11 +717,21 @@ function useDemoState() {
         ],
       };
     });
+
+    setTimeout(() => {
+      syncWithBackend();
+    }, 50);
+
     return role;
   };
 
   const logout = () => {
     authApi.logout();
+    sessionStorage.removeItem("flowling-session");
+    setState((s) => ({
+      ...s,
+      currentAccountId: "demo-user",
+    }));
     setNotice("Flowling đã sẵn sàng");
   };
   const saveContent = (content: Content) =>
