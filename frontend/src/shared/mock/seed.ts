@@ -275,24 +275,9 @@ export function createPersonal(
 export function createSeed(): DemoState {
   return {
     version: 1,
-    contents: createContents(),
-    vocabulary: vocabularySeed,
-    accounts: [
-      {
-        id: "demo-user",
-        email: "minh@flowling.demo",
-        passwordHash: "demo",
-        role: "ADMIN",
-        data: createPersonal(),
-      },
-      {
-        id: "demo-admin",
-        email: "admin@flowling.demo",
-        passwordHash: "demo",
-        role: "ADMIN",
-        data: createPersonal("Biên tập viên", "admin@flowling.demo"),
-      },
-    ],
-    currentAccountId: "demo-user",
+    contents: [],
+    vocabulary: [],
+    accounts: [],
+    currentAccountId: null,
   };
 }

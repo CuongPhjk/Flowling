@@ -44,7 +44,7 @@ export const GUEST_PERSONAL: PersonalData = {
   reviewsToday: {},
 };
 
-const STORAGE_KEY = "flowling-demo-v1";
+const STORAGE_KEY = "flowling-v2";
 export const uid = () => crypto.randomUUID();
 export async function digest(value: string) {
   const buffer = await crypto.subtle.digest(
@@ -57,6 +57,10 @@ export async function digest(value: string) {
 }
 function load(): DemoState {
   try {
+    // Purge old mock storage and sessions
+    localStorage.removeItem("flowling-demo-v1");
+    sessionStorage.removeItem("flowling-session");
+
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if (
       value?.version === 1 &&
@@ -64,16 +68,7 @@ function load(): DemoState {
       Array.isArray(value.contents) &&
       Array.isArray(value.vocabulary)
     ) {
-      const activeId = value.currentAccountId || value.accounts[0]?.id || "demo-user";
-      const accounts = value.accounts.map((a: any) => ({
-        ...a,
-        role: "ADMIN",
-      }));
-      return { 
-        ...value, 
-        accounts,
-        currentAccountId: activeId,
-      };
+      return value;
     }
   } catch {}
   return createSeed();
@@ -109,7 +104,7 @@ function useDemoState() {
   const [state, setState] = useState<DemoState>(load);
   const [notice, setNotice] = useState("");
   const [storageError, setStorageError] = useState("");
-  const account = state.accounts.find((a) => a.id === state.currentAccountId) || state.accounts[0];
+  const account = state.accounts.find((a) => a.id === state.currentAccountId) || null;
   const data = account?.data || GUEST_PERSONAL;
   useEffect(() => {
     try {
@@ -728,11 +723,10 @@ function useDemoState() {
   const logout = () => {
     authApi.logout();
     sessionStorage.removeItem("flowling-session");
-    setState((s) => ({
-      ...s,
-      currentAccountId: "demo-user",
-    }));
-    setNotice("Flowling đã sẵn sàng");
+    localStorage.removeItem("flowling_jwt_token");
+    localStorage.removeItem(STORAGE_KEY);
+    setState(createSeed());
+    setNotice("Đã đăng xuất tài khoản");
   };
   const saveContent = (content: Content) =>
     setState((s) => ({

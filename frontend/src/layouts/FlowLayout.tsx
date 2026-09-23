@@ -18,7 +18,7 @@ import { topics } from "../shared/mock/seed";
 import { Speak } from "../shared/components/ui";
 
 export function FlowLayout() {
-  const { data } = useDemo();
+  const { data, account } = useDemo();
   const location = useLocation();
   const due = data.words.filter((w) => w.nextReviewAt <= Date.now()).length;
   const wide = /^\/(article|podcast|video|readflow)/.test(location.pathname);
@@ -76,15 +76,44 @@ export function FlowLayout() {
             <Settings size={16} /> Không gian biên tập
           </Link>
 
-          <div className="user-mini">
-            <Link className="avatar" to="/profile">
-              {data.profile.name[0]}
-            </Link>
-            <Link to="/profile">
-              <strong>{data.profile.name}</strong>
-              <small>Luôn giữ sự tò mò 🌱</small>
-            </Link>
-          </div>
+          {account ? (
+            <div className="user-mini">
+              <Link className="avatar" to="/profile">
+                {data.profile.avatar ? (
+                  <img
+                    src={data.profile.avatar}
+                    alt={data.profile.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  data.profile.name[0] || "U"
+                )}
+              </Link>
+              <Link to="/profile">
+                <strong>{data.profile.name}</strong>
+                <small>Luôn giữ sự tò mò 🌱</small>
+              </Link>
+            </div>
+          ) : (
+            <div className="user-mini">
+              <Link
+                className="btn primary"
+                to="/login"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                }}
+              >
+                Đăng nhập
+              </Link>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -97,10 +126,39 @@ export function FlowLayout() {
           <span className="small muted">Một chút khám phá, mỗi ngày.</span>
 
           <div className="row">
-            <span className="streak-pill">🔥 {data.profile.streak} ngày</span>
-            <Link className="avatar small-avatar" to="/profile">
-              {data.profile.name[0]}
-            </Link>
+            {account ? (
+              <>
+                <span className="streak-pill">🔥 {data.profile.streak} ngày</span>
+                <Link className="avatar small-avatar" to="/profile">
+                  {data.profile.avatar ? (
+                    <img
+                      src={data.profile.avatar}
+                      alt={data.profile.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    data.profile.name[0] || "U"
+                  )}
+                </Link>
+              </>
+            ) : (
+              <Link
+                className="btn primary"
+                to="/login"
+                style={{
+                  fontSize: "13px",
+                  padding: "6px 14px",
+                  textDecoration: "none",
+                }}
+              >
+                Đăng nhập
+              </Link>
+            )}
           </div>
         </header>
 

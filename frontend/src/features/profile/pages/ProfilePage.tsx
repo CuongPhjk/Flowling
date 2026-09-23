@@ -4,7 +4,7 @@ import { useDemo } from "../../../app/providers";
 import { dayKey } from "../../../shared/mock/seed";
 import { PageHeading, Modal } from "../../../shared/components/ui";
 export function ProfilePage() {
-  const { data, updatePersonal, notify } = useDemo();
+  const { account, data, updatePersonal, notify, logout } = useDemo();
   const [edit, setEdit] = useState(false),
     [name, setName] = useState(data.profile.name),
     [avatar, setAvatar] = useState(data.profile.avatar);
@@ -14,26 +14,50 @@ export function ProfilePage() {
         eyebrow="YOUR LITTLE CORNER"
         title="Mỗi ngày, một chút mới."
         description="Nhìn lại hành trình và tạo không gian phù hợp với bạn."
+        action={
+          account ? (
+            <button className="btn" onClick={() => logout()}>
+              Đăng xuất
+            </button>
+          ) : (
+            <Link className="btn primary" to="/login">
+              Đăng nhập / Đăng ký
+            </Link>
+          )
+        }
       />
+      {!account && (
+        <div className="panel" style={{ padding: "24px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--c-surface)" }}>
+          <div>
+            <h3>Bạn đang trải nghiệm với tư cách Khách 🌱</h3>
+            <p className="muted" style={{ margin: "4px 0 0" }}>Đăng nhập để đồng bộ tiến độ học, từ vựng và bài đã lưu trên mọi thiết bị.</p>
+          </div>
+          <Link className="btn primary" to="/login">
+            Bắt đầu ngay →
+          </Link>
+        </div>
+      )}
       <div className="profile-banner panel">
         <div className="profile-avatar">
           {data.profile.avatar ? (
             <img src={data.profile.avatar} alt="Ảnh đại diện" />
           ) : (
-            data.profile.name[0]
+            data.profile.name[0] || "U"
           )}
         </div>
         <div>
-          <span className="eyebrow">NGƯỜI ĐỌC TÒ MÒ</span>
+          <span className="eyebrow">{account ? "THÀNH VIÊN FLOWLING" : "KHÁCH VÃNG LAI"}</span>
           <h2>{data.profile.name}</h2>
-          <p className="muted">{data.profile.email}</p>
+          <p className="muted">{account ? data.profile.email : "Chưa đăng nhập"}</p>
           <Link className="green" to="/vocabulary">
             Sổ từ cá nhân →
           </Link>
         </div>
-        <button className="btn" onClick={() => setEdit(true)}>
-          Chỉnh sửa hồ sơ
-        </button>
+        {account && (
+          <button className="btn" onClick={() => setEdit(true)}>
+            Chỉnh sửa hồ sơ
+          </button>
+        )}
       </div>
       <div className="stats-grid">
         <div className="panel">
